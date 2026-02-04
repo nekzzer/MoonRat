@@ -1,0 +1,107 @@
+body {
+    background-color: #030304;
+    color: #d4d4d8;
+    overflow: hidden;
+}
+
+
+.noise-bg {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    pointer-events: none; 
+    z-index: 50; 
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+
+.glass-card {
+    background: rgba(10, 10, 12, 0.6);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 1px rgba(0,0,0,1), 0 30px 60px -12px rgba(0,0,0,0.8);
+}
+
+
+.input-ethereal {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
+}
+
+.input-ethereal:focus {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
+}
+
+
+@media (max-width: 768px) {
+    .glass-card {
+        max-width: 90%;
+        padding: 2rem;
+        margin: 1rem;
+    }
+
+    .glass-card h1 {
+        font-size: 1.25rem;
+    }
+
+    .glass-card p {
+        font-size: 10px;
+    }
+
+    .input-ethereal {
+        height: 3rem;
+        font-size: 13px;
+    }
+
+    button[type="submit"] {
+        height: 3rem;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .glass-card {
+        max-width: 95%;
+        padding: 1.5rem;
+        border-radius: 1.5rem;
+    }
+
+    .glass-card .w-12 {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .glass-card .w-12 i {
+        font-size: 1rem;
+    }
+
+    .glass-card h1 {
+        font-size: 1.125rem;
+    }
+
+    .input-ethereal {
+        font-size: 12px;
+        padding-left: 2.5rem;
+    }
+
+    .input-ethereal + i {
+        left: 0.875rem;
+    }
+}
+
+
+@media (hover: none) and (pointer: coarse) {
+    button[type="submit"] {
+        min-height: 48px;
+    }
+
+    .input-ethereal {
+        min-height: 48px;
+    }
+}

