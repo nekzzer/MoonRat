@@ -1,0 +1,28 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": true,
+    "max_connections": 100,
+    "secret_key": "change_this_secret_key_in_production"
+  },
+  "security": {
+    "require_authentication": true,
+    "session_timeout": 3600,
+    "max_login_attempts": 5
+  },
+  "ui_settings": {
+    "theme": "#c084fc",
+    "background": {
+      "type": "image",
+      "url": "https://i.pinimg.com/originals/09/1d/80/091d80a76186f325902ad351a58590c9.gif",
+      "video_opacity": 30,
+      "video_blur": 0
+    },
+    "interface": {
+      "glass_effect": false,
+      "animations": true,
+      "panel_opacity": 100
+    }
+  }
+}

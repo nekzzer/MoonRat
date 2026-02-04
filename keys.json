@@ -1,0 +1,22 @@
+{
+  "users": {
+    "admin123": {
+      "admin": true,
+      "username": "Admin",
+      "ui_settings": {
+        "theme": "#c084fc",
+        "background": {
+          "type": "gradient",
+          "url": "",
+          "video_opacity": 30,
+          "video_blur": 0
+        },
+        "interface": {
+          "glass_effect": true,
+          "animations": true,
+          "panel_opacity": 100
+        }
+      }
+    }
+  }
+}
